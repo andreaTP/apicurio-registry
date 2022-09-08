@@ -349,6 +349,7 @@ public class KafkaSqlRegistryStorage extends AbstractRegistryStorage {
         Map<String, ContentHandle> resolvedReferences = this.resolveReferences(references);
 
         if (!sqlStore.isContentExists(contentHash)) {
+            log.warn("Creating new content!");
             long contentId = nextClusterContentId();
 
             ContentHandle canonicalContent = this.canonicalizeContent(artifactType, content, resolvedReferences);
@@ -506,6 +507,8 @@ public class KafkaSqlRegistryStorage extends AbstractRegistryStorage {
         }
 
         String contentHash = ensureContent(content, groupId, artifactId, artifactType, references);
+        log.warn("Content hash is " + contentHash);
+
         String createdBy = securityIdentity.getPrincipal().getName();
         Date createdOn = new Date();
 
