@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: registry-service
+  name: registry-service
+spec:
+  type: ClusterIP
+  ports:
+    - name: registry-port
+      port: 8080
+  selector:
+    app: registry
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: registry
+  name: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - image: docker.io/apicurio/apicurio-registry-kafkasql:latest-snapshot
+          imagePullPolicy: IfNotPresent
+          name: registry
+          env: # Reference: https://github.com/fabric8io-images/run-java-sh/blob/7c1d123fb6e99182d08e20a21fb9513f248c45ed/fish-pepper/run-java-sh/readme.md#running-a-java-application
+            - name: JAVA_MAX_MEM_RATIO
+              value: "70"
+            - name: JAVA_OPTIONS
+              value: -Dregistry.kafka.common.bootstrap.servers=my-kafka-kafka-bootstrap.default.svc:9092 -Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "250m"
+            limits:
+              memory: "1000Mi"
+              cpu: "500m"
