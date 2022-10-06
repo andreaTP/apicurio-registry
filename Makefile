@@ -234,7 +234,7 @@ build-integration-tests-multitenancy:
 	@echo "----------------------------------------------------------------------"
 	rm -rf multitenancy
 	git clone https://github.com/Apicurio/apicurio-tenant-manager.git --branch="main" --depth 1 multitenancy
-	( cd multitenancy && .././mvnw clean install -DskipTests=true )
+	( cd multitenancy && .././mvnw clean install -DskipTests=true -X)
 
 .PHONY: build-integration-tests-common ## Builds integration-tests-common
 build-integration-tests-common:
