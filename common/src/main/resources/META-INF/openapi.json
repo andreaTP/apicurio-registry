@@ -1907,6 +1907,11 @@
                                 }
                             }
                         },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileContent"
+                            }
+                        },
                         "application/create.extended+json": {
                             "schema": {
                                 "$ref": "#/components/schemas/ContentCreateRequest"
@@ -2151,6 +2156,11 @@
                                         }
                                     }
                                 }
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileContent"
                             }
                         },
                         "application/create.extended+json": {
@@ -2493,6 +2503,11 @@
                                         }
                                     }
                                 }
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/FileContent"
                             }
                         },
                         "application/create.extended+json": {
