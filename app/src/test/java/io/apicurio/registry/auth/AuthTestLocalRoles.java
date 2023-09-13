@@ -67,26 +67,6 @@
 //    @Info(category = "auth", description = "Auth token endpoint", availableSince = "2.1.0.Final")
 //    String authServerUrlConfigured;
 //
-//    ApicurioHttpClient httpClient;
-//
-//
-//    @Override
-//    protected AdminClient createAdminClientV2() {
-//        httpClient = ApicurioHttpClientFactory.create(authServerUrlConfigured, new AuthErrorHandler());
-//        Auth auth = new OidcAuth(httpClient, JWKSMockServer.ADMIN_CLIENT_ID, "test1");
-//        return this.createAdminClient(auth);
-//    }
-//
-//    /**
-//     * @see io.apicurio.registry.AbstractResourceTestBase#createRestClientV2()
-//     */
-//    @Override
-//    protected RegistryClient createRestClientV2() {
-//        httpClient = ApicurioHttpClientFactory.create(authServerUrlConfigured, new AuthErrorHandler());
-//        Auth auth = new OidcAuth(httpClient, JWKSMockServer.ADMIN_CLIENT_ID, "test1");
-//        return this.createClient(auth);
-//    }
-//
 //    @Test
 //    public void testLocalRoles() throws Exception {
 //        Auth authAdmin = new OidcAuth(httpClient, JWKSMockServer.ADMIN_CLIENT_ID, "test1");
