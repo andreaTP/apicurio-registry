@@ -106,7 +106,7 @@ public class OidcAccessTokenProvider implements AccessTokenProvider {
         /*
           expiresIn is in seconds
          */
-        Duration expiresIn = Duration.ofSeconds(Optional.ofNullable(json.get("expires_in").longValue()).orElse(DEFAULT_EXPIRES_IN));
+        Duration expiresIn = Duration.ofSeconds(Optional.ofNullable(json.get("expires_in")).map(j -> j.longValue()).orElse(DEFAULT_EXPIRES_IN));
         if (expiresIn.compareTo(this.tokenExpirationReduction) >= 0) {
             //expiresIn is greater than tokenExpirationReduction
             expiresIn = expiresIn.minus(this.tokenExpirationReduction);
