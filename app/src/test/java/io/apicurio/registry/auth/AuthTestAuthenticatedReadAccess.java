@@ -87,8 +87,6 @@ public class AuthTestAuthenticatedReadAccess extends AbstractResourceTestBase {
                         config.headers.add("X-Registry-ArtifactId", "testReadOperationWithNoRole");
                     }).get(3, TimeUnit.SECONDS);
         });
-        Assertions.assertNotNull(executionException.getCause());
-        Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
-        Assertions.assertEquals(403, ((ApiException)executionException.getCause()).responseStatusCode);
+        assertForbidden(executionException);
     }
 }

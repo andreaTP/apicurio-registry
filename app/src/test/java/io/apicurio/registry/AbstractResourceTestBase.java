@@ -30,10 +30,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
+import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.registry.rest.client.models.ArtifactMetaData;
 import io.apicurio.registry.rest.v2.beans.ArtifactReference;
+import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -314,5 +316,25 @@ public abstract class AbstractResourceTestBase extends AbstractRegistryTestBase 
                 .peek(r -> r.setGroupId(defaultGroupIdToNull(r.getGroupId())))
                 .map(V2ApiUtil::referenceToDto)
                 .collect(Collectors.toList());
+    }
+
+    protected void assertForbidden(ExecutionException executionException) {
+        Assertions.assertNotNull(executionException.getCause());
+        Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
+        Assertions.assertEquals(403, ((ApiException)executionException.getCause()).responseStatusCode);
+    }
+
+    protected void assertNotAuthorized(ExecutionException executionException) {
+        Assertions.assertNotNull(executionException.getCause());
+
+        // TODO:
+        // this should be improved in Kiota -> https://github.com/microsoft/kiota-java/issues/654
+        if (executionException.getCause() instanceof  NotAuthorizedException) {
+            // go on
+        } else {
+            // mapped by Kiota
+            Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
+            Assertions.assertEquals(401, ((ApiException) executionException.getCause()).responseStatusCode);
+        }
     }
 }

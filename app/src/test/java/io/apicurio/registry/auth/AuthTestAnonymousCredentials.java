@@ -63,9 +63,10 @@ public class AuthTestAnonymousCredentials extends AbstractResourceTestBase {
                         new OidcAccessTokenProvider(authServerUrl, JWKSMockServer.WRONG_CREDS_CLIENT_ID, "secret")));
         adapter.setBaseUrl(registryV2ApiUrl);
         RegistryClient client = new RegistryClient(adapter);
-        Assertions.assertThrows(NotAuthorizedException.class, () -> {
+        var executionException = Assertions.assertThrows(ExecutionException.class, () -> {
             client.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
         });
+        assertNotAuthorized(executionException);
     }
 
     @Test
