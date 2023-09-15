@@ -56,8 +56,12 @@ public class AuthTestNoRoles extends AbstractResourceTestBase {
     final String groupId = "authTestGroupId";
 
     @Override
-    protected void deleteGlobalRules(int expectedDefaultRulesCount) throws Exception {
-        // do nothing credentials will not allow to delete the global rules
+    protected RegistryClient createRestClientV2() {
+        var adapter = new OkHttpRequestAdapter(
+                new BaseBearerTokenAuthenticationProvider(
+                        new OidcAccessTokenProvider(authServerUrlConfigured, JWKSMockServer.ADMIN_CLIENT_ID, "test1")));
+        adapter.setBaseUrl(registryV2ApiUrl);
+        return new RegistryClient(adapter);
     }
 
     @Test

@@ -18,10 +18,12 @@
 package io.apicurio.registry.auth;
 
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
+import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.common.apps.config.Info;
 import io.apicurio.registry.AbstractResourceTestBase;
 import io.apicurio.registry.BasicAuthenticationProvider;
+import io.apicurio.registry.OidcAccessTokenProvider;
 import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.models.ArtifactContent;
 import io.apicurio.registry.rest.client.models.Rule;
@@ -56,9 +58,17 @@ public class AuthTestProfileBasicClientCredentials extends AbstractResourceTestB
 
     final String groupId = "authTestGroupId";
 
+//    @Override
+//    protected void deleteGlobalRules(int expectedDefaultRulesCount) throws Exception {
+//        // do nothing credentials will not allow to delete the global rules
+//    }
     @Override
-    protected void deleteGlobalRules(int expectedDefaultRulesCount) throws Exception {
-        // do nothing credentials will not allow to delete the global rules
+    protected RegistryClient createRestClientV2() {
+        var adapter = new OkHttpRequestAdapter(
+                new BaseBearerTokenAuthenticationProvider(
+                        new OidcAccessTokenProvider(authServerUrl, JWKSMockServer.ADMIN_CLIENT_ID, "test1")));
+        adapter.setBaseUrl(registryV2ApiUrl);
+        return new RegistryClient(adapter);
     }
     @Test
     public void testWrongCreds() throws Exception {

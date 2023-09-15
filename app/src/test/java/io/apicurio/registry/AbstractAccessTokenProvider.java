@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static io.apicurio.rest.client.config.ApicurioClientConfig.APICURIO_REQUEST_HEADERS_PREFIX;
 import static io.apicurio.rest.client.request.Request.CONTENT_TYPE;
 
 public abstract class AbstractAccessTokenProvider implements AccessTokenProvider {
