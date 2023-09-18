@@ -21,7 +21,7 @@ import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.common.apps.config.Info;
 import io.apicurio.registry.AbstractResourceTestBase;
-import io.apicurio.registry.OidcAccessTokenProvider;
+import io.apicurio.registry.auth.OidcAccessTokenProvider;
 import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.models.ArtifactContent;
 import io.apicurio.registry.rest.client.models.RoleMapping;
@@ -65,12 +65,6 @@ public class AuthTestLocalRoles extends AbstractResourceTestBase {
     @ConfigProperty(name = "registry.auth.token.endpoint")
     @Info(category = "auth", description = "Auth token endpoint", availableSince = "2.1.0.Final")
     String authServerUrlConfigured;
-
-//    probably better with the override instead
-//    @Override
-//    protected void deleteGlobalRules(int expectedDefaultRulesCount) throws Exception {
-//        // do nothing credentials will not allow to delete the global rules
-//    }
 
     @Override
     protected RegistryClient createRestClientV2() {

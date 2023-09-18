@@ -1,15 +1,14 @@
+// TODO: this should be streamlined, along with the client?
+// or in kiota-java-extra?
 // TODO: should this go to common-client-things ?
 // TODO: complete the implementation with password and clean it up
-
-package io.apicurio.registry;
+package io.apicurio.registry.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.AccessTokenProvider;
 import com.microsoft.kiota.authentication.AllowedHostsValidator;
 import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
-import io.quarkus.logging.Log;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.FormBody;
@@ -27,12 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static io.apicurio.rest.client.config.ApicurioClientConfig.APICURIO_REQUEST_HEADERS_PREFIX;
-import static io.apicurio.rest.client.request.Request.CONTENT_TYPE;
-
-public abstract class AbstractAccessTokenProvider implements AccessTokenProvider {
+public class OidcAccessTokenProvider implements AccessTokenProvider {
     protected static final String CLIENT_CREDENTIALS_GRANT = "client_credentials";
-    protected static final String PASSWORD_GRANT = "password";
     protected static final Duration DEFAULT_TOKEN_EXPIRATION_REDUCTION = Duration.ofSeconds(1);
     protected static final long DEFAULT_EXPIRES_IN = 1000;
     protected final String authServerUrl;
@@ -42,8 +37,22 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
     private Instant cachedAccessTokenExp;
     private final OkHttpClient client;
     private final ObjectMapper mapper = new ObjectMapper();
+    private String clientId;
+    private String clientSecret;
 
-    protected AbstractAccessTokenProvider(String authServerUrl, Duration tokenExpirationReduction, String scope) {
+    public OidcAccessTokenProvider(String authServerUrl, String clientId, String clientSecret) {
+        this(authServerUrl, clientId, clientSecret, DEFAULT_TOKEN_EXPIRATION_REDUCTION, null);
+    }
+
+    public OidcAccessTokenProvider(String authServerUrl, String clientId, String clientSecret, Duration tokenExpirationReduction) {
+        this(authServerUrl, clientId, clientSecret, tokenExpirationReduction, null);
+    }
+    public OidcAccessTokenProvider(String authServerUrl, String clientId, String clientSecret, Duration tokenExpirationReduction, String scope) {
+        this(authServerUrl, tokenExpirationReduction, scope);
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+    }
+    public OidcAccessTokenProvider(String authServerUrl, Duration tokenExpirationReduction, String scope) {
         this.authServerUrl = authServerUrl.endsWith("/") ? authServerUrl : authServerUrl + "/";
         this.client = new OkHttpClient();
         this.scope = scope;
@@ -54,7 +63,6 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
         }
     }
 
-    protected abstract FormBody.Builder getParams();
     private CompletableFuture<Void> requestAccessToken() {
         var dataBuilder = getParams();
         if (scope != null) {
@@ -64,10 +72,9 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
 
         Request request = new Request.Builder()
                 .url(authServerUrl)
-                .addHeader(CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .post(data)
                 .build();
-        Log.error("Going to request: " + request);
 
         var result = new CompletableFuture<Response>();
         client.newCall(request).enqueue(new Callback() {
@@ -90,14 +97,12 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
                 if (code == 200) {
                     body = response.body().string();
                 }
-                Log.error("Response code: " + code + " content: " + body);
             } catch (Exception e) {
                 throw new RuntimeException("Error issuing a new token", e);
             }
 
             if (code == 200) {
                 try {
-                    Log.error("DEBUG " + body);
                     json = mapper.readTree(body);
                     cachedAccessToken = mapper.readTree(body).get("access_token").asText();
                 } catch (Exception e) {
@@ -121,24 +126,8 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
         });
     }
 
-//    public String obtainAccessTokenPasswordGrant(String username, String password) {
-//        try {
-//            final Map<String, String> params = Map.of("grant_type", PASSWORD_GRANT, "client_id", clientId, "client_secret", clientSecret, "username", username, "password", password);
-//            final String paramsEncoded = params.entrySet().stream().map(entry -> String.join("=",
-//                    URLEncoder.encode(entry.getKey(), UTF_8),
-//                    URLEncoder.encode(entry.getValue(), UTF_8))
-//            ).collect(Collectors.joining("&"));
-//
-//
-//            return apicurioHttpClient.sendRequest(TokenRequestsProvider.obtainAccessToken(paramsEncoded)).getToken();
-//
-//        } catch (JsonProcessingException e) {
-//            throw new IllegalStateException("Error found while trying to request a new token");
-//        }
-//    }
-
     private boolean isAccessTokenRequired() {
-         return null == cachedAccessToken || isTokenExpired();
+        return null == cachedAccessToken || isTokenExpired();
     }
 
     private boolean isTokenExpired() {
@@ -156,5 +145,12 @@ public abstract class AbstractAccessTokenProvider implements AccessTokenProvider
     @Override
     public AllowedHostsValidator getAllowedHostsValidator() {
         return new AllowedHostsValidator(new String[]{});
+    }
+
+    protected FormBody.Builder getParams() {
+        return new FormBody.Builder()
+                .add("grant_type", CLIENT_CREDENTIALS_GRANT)
+                .add("client_id", clientId)
+                .add("client_secret", clientSecret);
     }
 }

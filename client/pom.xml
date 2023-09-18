@@ -68,6 +68,16 @@
             <artifactId>jakarta.annotation-api</artifactId>
             <version>2.1.1</version>
         </dependency>
+        <!-- TODO: this is for OIDC auth, let's move it to a separate package maybe -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.apicurio</groupId>
+            <!-- used only for NotAuthorized ATM -->
+            <artifactId>apicurio-common-rest-client-common</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
