@@ -20,7 +20,6 @@ import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.common.apps.config.Info;
 import io.apicurio.registry.AbstractResourceTestBase;
-import io.apicurio.registry.auth.OidcAccessTokenProvider;
 import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rules.validity.ValidityLevel;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;

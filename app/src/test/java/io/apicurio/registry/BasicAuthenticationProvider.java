@@ -1,6 +1,5 @@
 package io.apicurio.registry;
 
-import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.RequestInformation;
 import com.microsoft.kiota.authentication.AuthenticationProvider;
 import jakarta.annotation.Nonnull;
@@ -10,7 +9,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class BasicAuthenticationProvider implements AuthenticationProvider {
 

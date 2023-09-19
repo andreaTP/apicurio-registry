@@ -22,13 +22,11 @@ import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.common.apps.config.Info;
 import io.apicurio.registry.AbstractResourceTestBase;
-import io.apicurio.registry.auth.OidcAccessTokenProvider;
 import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.types.ArtifactType;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.apicurio.registry.utils.tests.AuthTestProfileAnonymousCredentials;
 import io.apicurio.registry.utils.tests.JWKSMockServer;
-import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -36,9 +34,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 

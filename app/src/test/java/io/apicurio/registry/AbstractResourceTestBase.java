@@ -327,10 +327,8 @@ public abstract class AbstractResourceTestBase extends AbstractRegistryTestBase 
     protected void assertNotAuthorized(ExecutionException executionException) {
         Assertions.assertNotNull(executionException.getCause());
 
-        // TODO:
-        // this should be improved in Kiota -> https://github.com/microsoft/kiota-java/issues/654
         if (executionException.getCause() instanceof  NotAuthorizedException) {
-            // go on
+            // thrown by the token provider adapter
         } else {
             // mapped by Kiota
             Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());

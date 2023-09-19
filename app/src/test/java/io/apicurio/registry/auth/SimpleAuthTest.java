@@ -1,4 +1,3 @@
-// TODO: port me
 /*
  * Copyright 2021 Red Hat
  *
@@ -36,7 +35,6 @@ import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.apicurio.registry.utils.tests.AuthTestProfile;
 import io.apicurio.registry.utils.tests.JWKSMockServer;
 import io.apicurio.registry.utils.tests.TestUtils;
-import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
