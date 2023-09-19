@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
@@ -90,14 +91,16 @@ public abstract class AbstractDirectoryParser<Schema> {
         String type = artifact.getType();
         Boolean canonicalize = artifact.getCanonicalize();
         String data = null;
-        if (artifact.getMinify() != null && artifact.getMinify()) {
-            try {
+        try {
+            if (artifact.getMinify() != null && artifact.getMinify()) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readValue(artifactContent, JsonNode.class);
                 data = jsonNode.toString();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } else {
+                data = new String(artifactContent.readAllBytes(), StandardCharsets.UTF_8);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
         ArtifactContent content = new ArtifactContent();
         content.setContent(data);

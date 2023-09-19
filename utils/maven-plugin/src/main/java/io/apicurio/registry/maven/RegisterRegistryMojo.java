@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,6 +49,7 @@ import io.apicurio.registry.content.refs.ExternalReference;
 import io.apicurio.registry.content.refs.ReferenceFinder;
 import io.apicurio.registry.maven.refs.IndexedResource;
 import io.apicurio.registry.maven.refs.ReferenceIndex;
+import io.apicurio.registry.rest.client.models.ArtifactContent;
 import io.apicurio.registry.rest.client.models.ArtifactMetaData;
 import io.apicurio.registry.rest.client.models.ArtifactReference;
 import io.apicurio.registry.types.ArtifactType;
@@ -243,16 +245,18 @@ public class RegisterRegistryMojo extends AbstractRegistryMojo {
         String type = artifact.getType();
         Boolean canonicalize = artifact.getCanonicalize();
         String data = null;
-        if (artifact.getMinify() != null && artifact.getMinify()) {
-            try {
+        try {
+            if (artifact.getMinify() != null && artifact.getMinify()) {
                 ObjectMapper objectMapper = new ObjectMapper();
                 JsonNode jsonNode = objectMapper.readValue(artifactContent, JsonNode.class);
                 data = jsonNode.toString();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            } else {
+                data = new String(artifactContent.readAllBytes(), StandardCharsets.UTF_8);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        io.apicurio.registry.rest.client.models.ArtifactContent content = new io.apicurio.registry.rest.client.models.ArtifactContent();
+        ArtifactContent content = new ArtifactContent();
         content.setContent(data);
         content.setReferences(references.stream().map(r -> {
             ArtifactReference ref = new ArtifactReference();
@@ -267,7 +271,9 @@ public class RegisterRegistryMojo extends AbstractRegistryMojo {
                 .byGroupId(groupId)
                 .artifacts()
                 .post(content, config -> {
-                    config.queryParameters.ifExists = artifact.getIfExists().value();
+                    if (artifact.getIfExists() != null) {
+                        config.queryParameters.ifExists = artifact.getIfExists().value();
+                    }
                     config.queryParameters.canonical = canonicalize;
                     config.headers.add("Content-Type", ContentTypes.APPLICATION_CREATE_EXTENDED);
                     if (artifactId != null) {
