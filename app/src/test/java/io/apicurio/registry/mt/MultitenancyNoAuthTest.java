@@ -18,11 +18,8 @@ package io.apicurio.registry.mt;
 
 import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
-import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
-import io.apicurio.registry.auth.OidcAccessTokenProvider;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
-import io.apicurio.registry.utils.tests.JWKSMockServer;
 import io.apicurio.tenantmanager.api.datamodel.ApicurioTenant;
 import io.apicurio.tenantmanager.api.datamodel.TenantStatusValue;
 import io.apicurio.registry.AbstractRegistryTestBase;
@@ -56,7 +53,6 @@ import org.opentest4j.TestAbortedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -100,13 +96,13 @@ public class MultitenancyNoAuthTest extends AbstractRegistryTestBase {
         String tenantId2 = UUID.randomUUID().toString();
         tenantMetadataService.addToUnauthorizedList(tenantId2);
 
-        String tenant1BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId1 + "/apis/registry/v2";
-        String tenant2BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId2 + "/apis/registry/v2";
+        String tenant1BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId1;
+        String tenant2BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId2;
 
         var adapter1 = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-        adapter1.setBaseUrl(tenant1BaseUrl);
+        adapter1.setBaseUrl(tenant1BaseUrl + "/apis/registry/v2");
         var adapter2 = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-        adapter2.setBaseUrl(tenant2BaseUrl);
+        adapter2.setBaseUrl(tenant2BaseUrl + "/apis/registry/v2");
         RegistryClient clientTenant1 = new RegistryClient(adapter1);
         RegistryClient clientTenant2 = new RegistryClient(adapter2);
 
@@ -147,13 +143,13 @@ public class MultitenancyNoAuthTest extends AbstractRegistryTestBase {
         tenant2.setStatus(TenantStatusValue.READY);
         tenantMetadataService.createTenant(tenant2);
 
-        String tenant1BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId1 + "/apis/registry/v2";
-        String tenant2BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId2 + "/apis/registry/v2";
+        String tenant1BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId1;
+        String tenant2BaseUrl = "http://localhost:" + testPort + "/t/" + tenantId2;
 
         var adapter1 = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-        adapter1.setBaseUrl(tenant1BaseUrl);
+        adapter1.setBaseUrl(tenant1BaseUrl + "/apis/registry/v2");
         var adapter2 = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-        adapter2.setBaseUrl(tenant2BaseUrl);
+        adapter2.setBaseUrl(tenant2BaseUrl + "/apis/registry/v2");
         RegistryClient clientTenant1 = new RegistryClient(adapter1);
         RegistryClient clientTenant2 = new RegistryClient(adapter2);
 
