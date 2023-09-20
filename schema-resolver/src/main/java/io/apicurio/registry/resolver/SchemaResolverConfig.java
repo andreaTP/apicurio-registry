@@ -51,10 +51,10 @@ public class SchemaResolverConfig {
     public static final boolean AUTO_REGISTER_ARTIFACT_DEFAULT = false;
 
     /**
-     * Optional, one of {@link IfExists} to indicate the behavior of the client when there is a conflict creating an artifact because the artifact already exists.
+     * Optional, one of "IfExists" to indicate the behavior of the client when there is a conflict creating an artifact because the artifact already exists.
      */
     public static final String AUTO_REGISTER_ARTIFACT_IF_EXISTS = "apicurio.registry.auto-register.if-exists";
-    public static final String AUTO_REGISTER_ARTIFACT_IF_EXISTS_DEFAULT = IfExists.RETURN_OR_UPDATE.value();
+    public static final String AUTO_REGISTER_ARTIFACT_IF_EXISTS_DEFAULT = "RETURN_OR_UPDATE";
 
     /**
      * Optional, boolean to indicate whether serializer classes should attempt to find the latest artifact in the registry for the corresponding groupId/artifactId.
