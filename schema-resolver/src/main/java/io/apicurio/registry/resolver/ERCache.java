@@ -16,8 +16,8 @@
 
 package io.apicurio.registry.resolver;
 
+import com.microsoft.kiota.ApiException;
 import io.apicurio.registry.resolver.strategy.ArtifactCoordinates;
-import io.apicurio.registry.rest.client.exception.RateLimitedClientException;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -201,14 +201,14 @@ public class ERCache<V> {
                     return Result.error(new NullPointerException("Could not retrieve schema for the cache. " +
                         "Loading function returned null."));
                 }
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 // Rethrow the exception if we are not going to retry any more OR
                 // the exception is NOT caused by throttling. This prevents
                 // retries in cases where it does not make sense,
                 // e.g. an ArtifactNotFoundException is thrown.
                 // TODO Add additional exceptions that should cause a retry.
-                if (i == retries || !(e instanceof RateLimitedClientException))
-                    return Result.error(e);
+                if (i == retries || !((e instanceof ApiException) && (((ApiException)e).responseStatusCode == 429)))
+                    return Result.error(new RuntimeException(e));
             }
             try {
                 Thread.sleep(backoff.toMillis());

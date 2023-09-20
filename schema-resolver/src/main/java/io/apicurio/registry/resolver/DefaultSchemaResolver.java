@@ -19,18 +19,17 @@ package io.apicurio.registry.resolver;
 import io.apicurio.registry.resolver.data.Record;
 import io.apicurio.registry.resolver.strategy.ArtifactCoordinates;
 import io.apicurio.registry.resolver.strategy.ArtifactReference;
-import io.apicurio.registry.rest.v2.beans.ArtifactMetaData;
-import io.apicurio.registry.rest.v2.beans.IfExists;
-import io.apicurio.registry.rest.v2.beans.VersionMetaData;
-import io.apicurio.registry.types.ContentTypes;
-import io.apicurio.registry.utils.IoUtil;
+import io.apicurio.registry.rest.client.models.ArtifactMetaData;
+import io.apicurio.registry.rest.client.models.VersionMetaData;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Default implementation of {@link SchemaResolver}
@@ -41,7 +40,7 @@ import java.util.Optional;
 public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
 
     private boolean autoCreateArtifact;
-    private IfExists autoCreateBehavior;
+    private String autoCreateBehavior;
     private boolean findLatest;
     private boolean dereference;
 
@@ -66,7 +65,7 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
 
         this.autoCreateArtifact = config.autoRegisterArtifact();
         this.dereference = config.dereference();
-        this.autoCreateBehavior = IfExists.fromValue(config.autoRegisterArtifactIfExists());
+        this.autoCreateBehavior = config.autoRegisterArtifactIfExists();
         this.findLatest = config.findLatest();
     }
 
@@ -186,14 +185,16 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
         return schemaCache.getByContentId(contentId, contentIdKey -> {
 
             // it's impossible to retrieve more info about the artifact with only the contentId, and that's ok for this case
-            InputStream rawSchema = client.getContentById(contentIdKey);
+            InputStream rawSchema = null;
+            try {
+                rawSchema = client.ids().contentIds().byContentId(contentIdKey).get().get();
 
             //Get the artifact references
-            final List<io.apicurio.registry.rest.v2.beans.ArtifactReference> artifactReferences = client.getArtifactReferencesByContentId(contentId);
+            final List<ArtifactReference> artifactReferences = client.ids().contentIds().byContentId(contentId).references().get().get();
             //If there are any references for the schema being parsed, resolve them before parsing the schema
             final Map<String, ParsedSchema<S>> resolvedReferences = resolveReferences(artifactReferences);
 
-            byte[] schema = IoUtil.toBytes(rawSchema);
+            byte[] schema = rawSchema.readAllBytes();
             S parsed = schemaParser.parseSchema(schema, resolvedReferences);
 
             SchemaLookupResult.SchemaLookupResultBuilder<S> result = SchemaLookupResult.builder();
@@ -201,6 +202,14 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
             ParsedSchemaImpl<S> ps = new ParsedSchemaImpl<S>()
                     .setParsedSchema(parsed)
                     .setRawSchema(schema);
+
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
             return result
                     .contentId(contentIdKey)

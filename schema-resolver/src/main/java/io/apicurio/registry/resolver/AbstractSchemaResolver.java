@@ -22,7 +22,6 @@ import io.apicurio.registry.resolver.strategy.ArtifactReferenceResolverStrategy;
 import io.apicurio.registry.resolver.strategy.ArtifactReference;
 import io.apicurio.registry.resolver.utils.Utils;
 import io.apicurio.registry.rest.client.RegistryClient;
-import io.apicurio.registry.rest.client.RegistryClientFactory;
 import io.apicurio.registry.rest.v2.beans.ArtifactMetaData;
 import io.apicurio.registry.rest.v2.beans.VersionMetaData;
 import io.apicurio.registry.utils.IoUtil;
@@ -41,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Base implementation of {@link SchemaResolver}
@@ -183,7 +183,7 @@ public abstract class AbstractSchemaResolver<S, T> implements SchemaResolver<S, 
             InputStream rawSchema = client.getContentByGlobalId(globalIdKey, false,  true);
 
             //Get the artifact references
-            final List<io.apicurio.registry.rest.v2.beans.ArtifactReference> artifactReferences = client.getArtifactReferencesByGlobalId(globalId);
+            final List<ArtifactReference> artifactReferences = client.getArtifactReferencesByGlobalId(globalId);
             //If there are any references for the schema being parsed, resolve them before parsing the schema
             final Map<String, ParsedSchema<S>> resolvedReferences = resolveReferences(artifactReferences);
 
@@ -208,17 +208,24 @@ public abstract class AbstractSchemaResolver<S, T> implements SchemaResolver<S, 
         });
     }
 
-    protected Map<String, ParsedSchema<S>> resolveReferences(List<io.apicurio.registry.rest.v2.beans.ArtifactReference> artifactReferences) {
+    protected Map<String, ParsedSchema<S>> resolveReferences(List<ArtifactReference> artifactReferences) {
         Map<String, ParsedSchema<S>> resolvedReferences = new HashMap<>();
         artifactReferences.forEach(reference -> {
-            final InputStream referenceContent = client.getArtifactVersion(reference.getGroupId(), reference.getArtifactId(), reference.getVersion());
-            final List<io.apicurio.registry.rest.v2.beans.ArtifactReference> referenceReferences = client.getArtifactReferencesByCoordinates(reference.getGroupId(), reference.getArtifactId(), reference.getVersion());
-            if (!referenceReferences.isEmpty()) {
-                final Map<String, ParsedSchema<S>> nestedReferences = resolveReferences(referenceReferences);
-                resolvedReferences.putAll(nestedReferences);
-                resolvedReferences.put(reference.getName(), parseSchemaFromStream(reference.getName(), referenceContent, resolveReferences(referenceReferences)));
-            } else {
-                resolvedReferences.put(reference.getName(), parseSchemaFromStream(reference.getName(), referenceContent, Collections.emptyMap()));
+            final InputStream referenceContent;
+            try {
+                referenceContent = client.groups().byGroupId(reference.getGroupId()).artifacts().byArtifactId(reference.getArtifactId()).versions().byVersion(reference.getVersion()).get().get();
+                final List<ArtifactReference> referenceReferences = client.getArtifactReferencesByCoordinates(reference.getGroupId(), reference.getArtifactId(), reference.getVersion());
+                if (!referenceReferences.isEmpty()) {
+                    final Map<String, ParsedSchema<S>> nestedReferences = resolveReferences(referenceReferences);
+                    resolvedReferences.putAll(nestedReferences);
+                    resolvedReferences.put(reference.getName(), parseSchemaFromStream(reference.getName(), referenceContent, resolveReferences(referenceReferences)));
+                } else {
+                    resolvedReferences.put(reference.getName(), parseSchemaFromStream(reference.getName(), referenceContent, Collections.emptyMap()));
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
             }
         });
         return resolvedReferences;
