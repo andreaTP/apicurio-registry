@@ -200,6 +200,7 @@ public abstract class AbstractResourceTestBase extends AbstractRegistryTestBase 
             ref.setArtifactId(r.getArtifactId());
             ref.setGroupId(r.getGroupId());
             ref.setVersion(r.getVersion());
+            ref.setName(r.getName());
             return ref;
         }).collect(Collectors.toList());
         contentCreateRequest.setReferences(references);
