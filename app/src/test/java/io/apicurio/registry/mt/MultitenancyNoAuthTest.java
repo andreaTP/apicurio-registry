@@ -180,7 +180,6 @@ public class MultitenancyNoAuthTest extends AbstractRegistryTestBase {
             config.headers.add("X-Registry-ArtifactId", artifactId);
             config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
         }).get(3, TimeUnit.SECONDS);
-        // createArtifact(null, artifactId, ArtifactType.JSON, new ByteArrayInputStream("{}".getBytes()));
         TestUtils.retry(() -> client.ids().globalIds().byGlobalId(meta.getGlobalId()).get().get(3, TimeUnit.SECONDS));
 
         assertTrue(client.groups().byGroupId("default").artifacts().byArtifactId(meta.getId()).get().get(3, TimeUnit.SECONDS).readAllBytes().length > 0);

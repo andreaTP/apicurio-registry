@@ -105,7 +105,7 @@ public class SchemaResolverTest extends AbstractResourceTestBase {
 
         GenericRecord avroRecord = new GenericData.Record(schema);
         avroRecord.put("bar", "somebar");
-        Record<GenericRecord> record = new CustomResolverRecord(avroRecord, ArtifactReference.builder().artifactId(artifactId).build());
+        Record<GenericRecord> record = new CustomResolverRecord(avroRecord, ArtifactReference.builder().groupId("default").artifactId(artifactId).build());
         var lookup = resolver.resolveSchema(record);
 
         assertNull(lookup.getGroupId());
@@ -113,7 +113,15 @@ public class SchemaResolverTest extends AbstractResourceTestBase {
         assertEquals(schema.toString(), new String(lookup.getParsedSchema().getRawSchema()));
         assertNull(lookup.getParsedSchema().getParsedSchema());
 
-        Assertions.assertThrows(ArtifactNotFoundException.class, () -> resolver.resolveSchema(new CustomResolverRecord(avroRecord, ArtifactReference.builder().artifactId("foo").build())));
+        var runtimeException = Assertions.assertThrows(RuntimeException.class, () -> resolver.resolveSchema(new CustomResolverRecord(avroRecord, ArtifactReference.builder().groupId("default").artifactId("foo").build())));
+        // TODO: this seems excessive to me ...
+        io.apicurio.registry.rest.client.models.Error error = (io.apicurio.registry.rest.client.models.Error) runtimeException // wrapped because it was thrown in a lambda
+                .getCause() // RuntimeException thrown by ERCache
+                .getCause() // ExecutionException thrown by the Async layer of Kiota
+                .getCause(); // finally the "real" error
+        assertEquals("ArtifactNotFoundException", error.getName());
+        assertEquals(404, error.getErrorCode());
+
         resolver.close();
     }
 
