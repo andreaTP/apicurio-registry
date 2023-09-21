@@ -273,13 +273,13 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
             try {
                 artifactMetadata = client
                         .groups()
-                        .byGroupId(artifactReference.getGroupId())
+                        .byGroupId(artifactReference.getGroupId() == null ? "default" : artifactReference.getGroupId())
                         .artifacts()
                         .byArtifactId(artifactReference.getArtifactId())
                         .meta()
                         .post(content, config -> {
                             config.queryParameters.canonical = true;
-                            config.headers.add("Content-Type", "application/create.extended+json");
+                            config.headers.add("Content-Type", "application/get.extended+json");
                         })
                         .get();
             } catch (InterruptedException e) {
@@ -310,14 +310,17 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
             try {
                 artifactMetadata = client
                         .groups()
-                        .byGroupId(artifactReference.getGroupId())
+                        .byGroupId(artifactReference.getGroupId() == null ? "default" : artifactReference.getGroupId())
                         .artifacts()
                         .post(content, config -> {
                             config.queryParameters.ifExists = this.autoCreateBehavior;
                             config.queryParameters.canonical = false;
-                            config.headers.add("X-Registry-ArtifactId", artifactReference.getArtifactId());
-                            config.headers.add("X-Registry-ArtifactType", schemaParser.artifactType());
-                            config.headers.add("X-Registry-Version", artifactReference.getVersion());
+                            if (artifactReference.getArtifactId() != null)
+                                config.headers.add("X-Registry-ArtifactId", artifactReference.getArtifactId());
+                            if (schemaParser.artifactType() != null)
+                                config.headers.add("X-Registry-ArtifactType", schemaParser.artifactType());
+                            if (artifactReference.getVersion() != null)
+                                config.headers.add("X-Registry-Version", artifactReference.getVersion());
                         })
                         .get();
             } catch (InterruptedException e) {
@@ -351,14 +354,17 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
             try {
                 artifactMetadata = client
                         .groups()
-                        .byGroupId(artifactReference.getGroupId())
+                        .byGroupId(artifactReference.getGroupId() == null ? "default" : artifactReference.getGroupId())
                         .artifacts()
                         .post(content, config -> {
                             config.queryParameters.ifExists = this.autoCreateBehavior;
                             config.queryParameters.canonical = false;
-                            config.headers.add("X-Registry-ArtifactId", artifactReference.getArtifactId());
-                            config.headers.add("X-Registry-ArtifactType", schemaParser.artifactType());
-                            config.headers.add("X-Registry-Version", artifactReference.getVersion());
+                            if (artifactReference.getArtifactId() != null)
+                                config.headers.add("X-Registry-ArtifactId", artifactReference.getArtifactId());
+                            if (schemaParser.artifactType() != null)
+                                config.headers.add("X-Registry-ArtifactType", schemaParser.artifactType());
+                            if (artifactReference.getVersion() != null)
+                                config.headers.add("X-Registry-Version", artifactReference.getVersion());
                             config.headers.add("Content-Type", "application/create.extended+json");
                         })
                         .get();
