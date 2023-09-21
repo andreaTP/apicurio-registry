@@ -16,7 +16,6 @@
 
 package io.apicurio.registry.mt.auth;
 
-import com.microsoft.kiota.ApiException;
 import com.microsoft.kiota.authentication.BaseBearerTokenAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.common.apps.config.Info;
