@@ -1658,7 +1658,14 @@
                 ],
                 "responses": {
                     "200": {
-                        "$ref": "#/components/responses/ArtifactContent"
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ArtifactContent"
+                                }
+                            }
+                        },
+                        "description": "When successful, returns the updated artifact content."
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
