@@ -344,12 +344,13 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
 
         String rawSchemaString = IoUtil.toString(parsedSchema.getRawSchema());
 
-        final List<io.apicurio.registry.rest.v2.beans.ArtifactReference> artifactReferences = parseReferences(referenceLookups);
+        final List<io.apicurio.registry.rest.client.models.ArtifactReference> artifactReferences = parseReferences(referenceLookups);
 
         return schemaCache.getByContent(rawSchemaString, contentKey -> {
 
             ArtifactContent content = new ArtifactContent();
             content.setContent(rawSchemaString);
+            content.setReferences(artifactReferences);
             ArtifactMetaData artifactMetadata = null;
             try {
                 artifactMetadata = client
@@ -384,11 +385,11 @@ public class DefaultSchemaResolver<S, T> extends AbstractSchemaResolver<S, T> {
         });
     }
 
-    private List<io.apicurio.registry.rest.v2.beans.ArtifactReference> parseReferences(List<SchemaLookupResult<S>> referenceLookups) {
-        final List<io.apicurio.registry.rest.v2.beans.ArtifactReference> artifactReferences = new ArrayList<>();
+    private List<io.apicurio.registry.rest.client.models.ArtifactReference> parseReferences(List<SchemaLookupResult<S>> referenceLookups) {
+        final List<io.apicurio.registry.rest.client.models.ArtifactReference> artifactReferences = new ArrayList<>();
 
         referenceLookups.forEach(referenceLookup -> {
-            io.apicurio.registry.rest.v2.beans.ArtifactReference artifactReferenceLookup = new io.apicurio.registry.rest.v2.beans.ArtifactReference();
+            io.apicurio.registry.rest.client.models.ArtifactReference artifactReferenceLookup = new io.apicurio.registry.rest.client.models.ArtifactReference();
             artifactReferenceLookup.setArtifactId(referenceLookup.getArtifactId());
             artifactReferenceLookup.setGroupId(referenceLookup.getGroupId());
             artifactReferenceLookup.setName(referenceLookup.getParsedSchema().referenceName());

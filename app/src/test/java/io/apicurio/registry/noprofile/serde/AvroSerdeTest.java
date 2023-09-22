@@ -1,4 +1,3 @@
-// TODO: port me ... there are some tests failing yet ...
 /*
  * Copyright 2022 Red Hat
  *
@@ -83,7 +82,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @QuarkusTest
 public class AvroSerdeTest extends AbstractResourceTestBase {
-
     private RegistryClient restClient;
 
     @BeforeEach
@@ -201,7 +199,7 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
             // some impl details ...
             waitForSchema(globalId -> {
                 try {
-                    if (restClient.ids().globalIds().byGlobalId(globalId).get().get(3, TimeUnit.SECONDS) != null) {
+                    if (restClient.ids().globalIds().byGlobalId(globalId).get().get(3, TimeUnit.SECONDS).readAllBytes().length > 0) {
                         ArtifactMetaData artifactMetadata = artifactFinder.get();
                         assertEquals(globalId, artifactMetadata.getGlobalId());
                         return true;
@@ -211,6 +209,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
                 } catch (ExecutionException e) {
                     throw new RuntimeException(e);
                 } catch (TimeoutException e) {
+                    throw new RuntimeException(e);
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
                 return false;
