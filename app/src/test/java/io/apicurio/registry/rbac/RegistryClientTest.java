@@ -1,234 +1,291 @@
-// TODO: port me
-///*
-// * Copyright 2022 Red Hat
-// *
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// *
-// *      http://www.apache.org/licenses/LICENSE-2.0
-// *
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// */
-//
-//package io.apicurio.registry.rbac;
-//
-//import io.apicurio.registry.AbstractRegistryTestBase;
-//import io.apicurio.registry.AbstractResourceTestBase;
-//import io.apicurio.registry.rest.client.RegistryClient;
-//import io.apicurio.registry.rest.client.RegistryClientFactory;
-//import io.apicurio.registry.rest.client.exception.*;
-//import io.apicurio.registry.rest.v2.beans.*;
-//import io.apicurio.registry.storage.impl.sql.SqlUtil;
-//import io.apicurio.registry.types.*;
-//import io.apicurio.registry.utils.IoUtil;
-//import io.apicurio.registry.utils.tests.ApicurioTestTags;
-//import io.apicurio.registry.utils.tests.ApplicationRbacEnabledProfile;
-//import io.apicurio.registry.utils.tests.TestUtils;
-//import io.apicurio.registry.utils.tests.TooManyRequestsMock;
-//import io.quarkus.test.junit.QuarkusTest;
-//import io.quarkus.test.junit.TestProfile;
-//import jakarta.inject.Inject;
-//import org.apache.commons.codec.digest.DigestUtils;
-//import org.apache.commons.io.IOUtils;
-//import org.jetbrains.annotations.NotNull;
-//import org.junit.Assert;
-//import org.junit.jupiter.api.Assertions;
-//import org.junit.jupiter.api.Tag;
-//import org.junit.jupiter.api.Test;
-//import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
-//
-//import java.io.InputStream;
-//import java.nio.charset.StandardCharsets;
-//import java.util.*;
-//import java.util.concurrent.CountDownLatch;
-//import java.util.concurrent.ThreadLocalRandom;
-//import java.util.stream.Collectors;
-//
-//import static io.apicurio.registry.utils.tests.TestUtils.retry;
-//import static org.junit.jupiter.api.Assertions.*;
-//
-///**
-// * @author Carles Arnal 'carnalca@redhat.com'
-// */
-//@QuarkusTest
-//@TestProfile(ApplicationRbacEnabledProfile.class)
-//@SuppressWarnings("deprecation")
-//@Tag(ApicurioTestTags.SLOW)
-//public class RegistryClientTest extends AbstractResourceTestBase {
-//
-//    private static final Logger LOGGER = LoggerFactory.getLogger(RegistryClientTest.class);
-//
-//    private static final String ARTIFACT_OPENAPI_YAML_CONTENT = "openapi: \"3.0.2\"\n" +
-//            "info:\n" +
-//            "  description: \"Description\"\n" +
-//            "  version: \"1.0.0\"\n" +
-//            "  title: \"OpenAPI\"\n" +
-//            "paths:";
-//    private static final String UPDATED_OPENAPI_YAML_CONTENT = "openapi: \"3.0.2\"\n" +
-//            "info:\n" +
-//            "  description: \"Description v2\"\n" +
-//            "  version: \"2.0.0\"\n" +
-//            "  title: \"OpenAPI\"\n" +
-//            "paths:";
-//
-//    private static final String ARTIFACT_OPENAPI_JSON_CONTENT = "{\n" +
-//            "  \"openapi\" : \"3.0.2\",\n" +
-//            "  \"info\" : {\n" +
-//            "    \"description\" : \"Description\",\n" +
-//            "    \"version\" : \"1.0.0\",\n" +
-//            "    \"title\" : \"OpenAPI\"\n" +
-//            "  },\n" +
-//            "  \"paths\" : null\n" +
-//            "}";
-//    private static final String UPDATED_OPENAPI_JSON_CONTENT = "{\n" +
-//            "  \"openapi\" : \"3.0.2\",\n" +
-//            "  \"info\" : {\n" +
-//            "    \"description\" : \"Description v2\",\n" +
-//            "    \"version\" : \"2.0.0\",\n" +
-//            "    \"title\" : \"OpenAPI\"\n" +
-//            "  },\n" +
-//            "  \"paths\" : null\n" +
-//            "}";
-//
-//
-//    private static final String SCHEMA_WITH_REFERENCE = "{\r\n    \"namespace\":\"com.example.common\",\r\n    \"name\":\"Item\",\r\n    \"type\":\"record\",\r\n    \"fields\":[\r\n        {\r\n            \"name\":\"itemId\",\r\n            \"type\":\"com.example.common.ItemId\"\r\n        }]\r\n}";
-//    private static final String REFERENCED_SCHEMA = "{\"namespace\": \"com.example.common\", \"type\": \"record\", \"name\": \"ItemId\", \"fields\":[{\"name\":\"id\", \"type\":\"int\"}]}";
-//
-//    private static final String ARTIFACT_CONTENT = "{\"name\":\"redhat\"}";
-//    private static final String UPDATED_CONTENT = "{\"name\":\"ibm\"}";
-//
-//    @Inject
-//    MockAuditLogService auditLogService;
-//
-//    @Test
-//    public void testCreateArtifact() throws Exception {
-//        //Preparation
-//        final String groupId = "testCreateArtifact";
-//        final String artifactId = generateArtifactId();
-//
-//        final String version = "1";
-//        final String name = "testCreateArtifactName";
-//        final String description = "testCreateArtifactDescription";
-//
-//        //Execution
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, version, ArtifactType.JSON, IfExists.FAIL, false, name, description, stream);
-//
-//        //Assertions
-//        assertNotNull(created);
-//        assertEquals(groupId, created.getGroupId());
-//        assertEquals(artifactId, created.getId());
-//        assertEquals(version, created.getVersion());
-//        assertEquals(name, created.getName());
-//        assertEquals(description, created.getDescription());
-//        assertEquals(ARTIFACT_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//    }
-//
-//    @Test
-//    public void groupsCrud() throws Exception {
-//        //Preparation
-//        final String groupId = UUID.randomUUID().toString();
-//        GroupMetaData groupMetaData = new GroupMetaData();
-//        groupMetaData.setId(groupId);
-//        groupMetaData.setDescription("Groups test crud");
-//        groupMetaData.setProperties(Map.of("p1", "v1", "p2", "v2"));
-//
-//        clientV2.createArtifactGroup(groupMetaData);
-//
-//        final GroupMetaData artifactGroup = clientV2.getArtifactGroup(groupId);
-//        assertEquals(groupMetaData.getId(), artifactGroup.getId());
-//        assertEquals(groupMetaData.getDescription(), artifactGroup.getDescription());
-//        assertEquals(groupMetaData.getProperties(), artifactGroup.getProperties());
-//
-//
-//        String group1Id = UUID.randomUUID().toString();
-//        String group2Id = UUID.randomUUID().toString();
-//        String group3Id = UUID.randomUUID().toString();
-//
-//        groupMetaData.setId(group1Id);
-//        clientV2.createArtifactGroup(groupMetaData);
-//        groupMetaData.setId(group2Id);
-//        clientV2.createArtifactGroup(groupMetaData);
-//        groupMetaData.setId(group3Id);
-//        clientV2.createArtifactGroup(groupMetaData);
-//
-//
-//        GroupSearchResults groupSearchResults = clientV2.listGroups(SortBy.name, SortOrder.asc, 0, 100);
-//        assertTrue(groupSearchResults.getCount() >= 4);
-//
-//        final List<String> groupIds = groupSearchResults.getGroups().stream().map(SearchedGroup::getId)
-//                .collect(Collectors.toList());
-//
-//        assertTrue(groupIds.containsAll(List.of(groupId, group1Id, group2Id, group3Id)));
-//        clientV2.deleteArtifactGroup(groupId);
-//
-//        Assert.assertThrows(GroupNotFoundException.class, () -> clientV2.getArtifactGroup(groupId));
-//    }
-//
-//    @Test
-//    public void testCreateYamlArtifact() throws Exception {
-//        //Preparation
-//        final String groupId = "testCreateYamlArtifact";
-//        final String artifactId = generateArtifactId();
-//
-//        final String version = "1";
-//        final String name = "testCreateYamlArtifactName";
-//        final String description = "testCreateYamlArtifactDescription";
-//
-//        //Execution
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, version, ArtifactType.OPENAPI, IfExists.FAIL, false, name, description, ContentTypes.APPLICATION_YAML, null, null, stream);
-//
-//        //Assertions
-//        assertNotNull(created);
-//        assertEquals(groupId, created.getGroupId());
-//        assertEquals(artifactId, created.getId());
-//        assertEquals(version, created.getVersion());
-//        assertEquals(name, created.getName());
-//        assertEquals(description, created.getDescription());
-//        assertMultilineTextEquals(ARTIFACT_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//    }
-//
-//
-//    @Test
-//    public void testCreateArtifactVersion() throws Exception {
-//        //Preparation
-//        final String groupId = "testCreateArtifactVersion";
-//        final String artifactId = generateArtifactId();
-//
-//        final String version = "2";
-//        final String name = "testCreateArtifactVersionName";
-//        final String description = "testCreateArtifactVersionDescription";
-//
-//        createArtifact(groupId, artifactId);
-//
-//        //Execution
-//        final InputStream stream = IoUtil.toStream(UPDATED_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        VersionMetaData versionMetaData = clientV2.createArtifactVersion(groupId, artifactId, version, name, description, stream);
-//
-//        ArtifactMetaData amd = clientV2.getArtifactMetaData(groupId, artifactId);
-//
-//        //Assertions
-//        assertNotNull(versionMetaData);
-//        assertEquals(version, versionMetaData.getVersion());
-//        assertEquals(name, versionMetaData.getName());
-//        assertEquals(description, versionMetaData.getDescription());
-//
-//        assertNotNull(amd);
-//        assertEquals(version, amd.getVersion());
-//        assertEquals(name, amd.getName());
-//        assertEquals(description, amd.getDescription());
-//
-//        assertEquals(UPDATED_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//    }
-//
+/*
+ * Copyright 2022 Red Hat
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.apicurio.registry.rbac;
+
+import com.microsoft.kiota.ApiException;
+import io.apicurio.registry.AbstractRegistryTestBase;
+import io.apicurio.registry.AbstractResourceTestBase;
+import io.apicurio.registry.rest.client.RegistryClient;
+import io.apicurio.registry.rest.client.models.*;
+import io.apicurio.registry.rest.client.models.Properties;
+import io.apicurio.registry.storage.impl.sql.SqlUtil;
+import io.apicurio.registry.types.*;
+import io.apicurio.registry.utils.IoUtil;
+import io.apicurio.registry.utils.tests.ApicurioTestTags;
+import io.apicurio.registry.utils.tests.ApplicationRbacEnabledProfile;
+import io.apicurio.registry.utils.tests.TestUtils;
+import io.apicurio.registry.utils.tests.TooManyRequestsMock;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
+import jakarta.inject.Inject;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static io.apicurio.registry.utils.tests.TestUtils.retry;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * @author Carles Arnal 'carnalca@redhat.com'
+ */
+@QuarkusTest
+@TestProfile(ApplicationRbacEnabledProfile.class)
+@SuppressWarnings("deprecation")
+@Tag(ApicurioTestTags.SLOW)
+public class RegistryClientTest extends AbstractResourceTestBase {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(RegistryClientTest.class);
+
+    private static final String ARTIFACT_OPENAPI_YAML_CONTENT = "openapi: \"3.0.2\"\n" +
+            "info:\n" +
+            "  description: \"Description\"\n" +
+            "  version: \"1.0.0\"\n" +
+            "  title: \"OpenAPI\"\n" +
+            "paths:";
+    private static final String UPDATED_OPENAPI_YAML_CONTENT = "openapi: \"3.0.2\"\n" +
+            "info:\n" +
+            "  description: \"Description v2\"\n" +
+            "  version: \"2.0.0\"\n" +
+            "  title: \"OpenAPI\"\n" +
+            "paths:";
+
+    private static final String ARTIFACT_OPENAPI_JSON_CONTENT = "{\n" +
+            "  \"openapi\" : \"3.0.2\",\n" +
+            "  \"info\" : {\n" +
+            "    \"description\" : \"Description\",\n" +
+            "    \"version\" : \"1.0.0\",\n" +
+            "    \"title\" : \"OpenAPI\"\n" +
+            "  },\n" +
+            "  \"paths\" : null\n" +
+            "}";
+    private static final String UPDATED_OPENAPI_JSON_CONTENT = "{\n" +
+            "  \"openapi\" : \"3.0.2\",\n" +
+            "  \"info\" : {\n" +
+            "    \"description\" : \"Description v2\",\n" +
+            "    \"version\" : \"2.0.0\",\n" +
+            "    \"title\" : \"OpenAPI\"\n" +
+            "  },\n" +
+            "  \"paths\" : null\n" +
+            "}";
+
+
+    private static final String SCHEMA_WITH_REFERENCE = "{\r\n    \"namespace\":\"com.example.common\",\r\n    \"name\":\"Item\",\r\n    \"type\":\"record\",\r\n    \"fields\":[\r\n        {\r\n            \"name\":\"itemId\",\r\n            \"type\":\"com.example.common.ItemId\"\r\n        }]\r\n}";
+    private static final String REFERENCED_SCHEMA = "{\"namespace\": \"com.example.common\", \"type\": \"record\", \"name\": \"ItemId\", \"fields\":[{\"name\":\"id\", \"type\":\"int\"}]}";
+
+    private static final String ARTIFACT_CONTENT = "{\"name\":\"redhat\"}";
+    private static final String UPDATED_CONTENT = "{\"name\":\"ibm\"}";
+
+    @Inject
+    MockAuditLogService auditLogService;
+
+    @Test
+    public void testCreateArtifact() throws Exception {
+        //Preparation
+        final String groupId = "testCreateArtifact";
+        final String artifactId = generateArtifactId();
+
+        final String version = "1";
+        final String name = "testCreateArtifactName";
+        final String description = "testCreateArtifactDescription";
+
+        //Execution
+        final InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.queryParameters.ifExists = "FAIL";
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(created);
+        assertEquals(groupId, created.getGroupId());
+        assertEquals(artifactId, created.getId());
+        assertEquals(version, created.getVersion());
+        assertEquals(name, created.getName());
+        assertEquals(description, created.getDescription());
+        assertEquals(ARTIFACT_CONTENT, new String(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS).readAllBytes(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void groupsCrud() throws Exception {
+        //Preparation
+        final String groupId = UUID.randomUUID().toString();
+        CreateGroupMetaData groupMetaData = new CreateGroupMetaData();
+        groupMetaData.setId(groupId);
+        groupMetaData.setDescription("Groups test crud");
+        Properties props = new Properties();
+        props.setAdditionalData(Map.of("p1", "v1", "p2", "v2"));
+        groupMetaData.setProperties(props);
+
+        clientV2.groups().post(groupMetaData).get(3, TimeUnit.SECONDS);
+
+        final GroupMetaData artifactGroup = clientV2.groups().byGroupId(groupId).get().get(3, TimeUnit.SECONDS);
+        assertEquals(groupMetaData.getId(), artifactGroup.getId());
+        assertEquals(groupMetaData.getDescription(), artifactGroup.getDescription());
+        assertEquals(groupMetaData.getProperties().getAdditionalData(), artifactGroup.getProperties().getAdditionalData());
+
+
+        String group1Id = UUID.randomUUID().toString();
+        String group2Id = UUID.randomUUID().toString();
+        String group3Id = UUID.randomUUID().toString();
+
+        groupMetaData.setId(group1Id);
+        clientV2.groups().post(groupMetaData).get(3, TimeUnit.SECONDS);
+        groupMetaData.setId(group2Id);
+        clientV2.groups().post(groupMetaData).get(3, TimeUnit.SECONDS);
+        groupMetaData.setId(group3Id);
+        clientV2.groups().post(groupMetaData).get(3, TimeUnit.SECONDS);
+
+
+        GroupSearchResults groupSearchResults = clientV2.groups().get(config -> {
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 100;
+            config.queryParameters.order = "asc";
+            config.queryParameters.orderby = "name";
+        }).get(3, TimeUnit.SECONDS);
+        assertTrue(groupSearchResults.getCount() >= 4);
+
+        final List<String> groupIds = groupSearchResults.getGroups().stream().map(SearchedGroup::getId)
+                .collect(Collectors.toList());
+
+        assertTrue(groupIds.containsAll(List.of(groupId, group1Id, group2Id, group3Id)));
+        clientV2.groups().byGroupId(groupId).delete().get(3, TimeUnit.SECONDS);
+
+        var executionException = Assert.assertThrows(ExecutionException.class, () -> clientV2.groups().byGroupId(groupId).get().get(3, TimeUnit.SECONDS));
+        Assertions.assertNotNull(executionException.getCause());
+        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException.getCause().getClass());
+        Assertions.assertEquals("GroupNotFoundException", ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getName());
+        Assertions.assertEquals(404, ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getErrorCode());
+    }
+
+    @Test
+    public void testCreateYamlArtifact() throws Exception {
+        //Preparation
+        final String groupId = "testCreateYamlArtifact";
+        final String artifactId = generateArtifactId();
+
+        final String version = "1";
+        final String name = "testCreateYamlArtifactName";
+        final String description = "testCreateYamlArtifactDescription";
+
+        //Execution
+
+        // TODO: this is a bug in Kiota, to be fixed to match the content
+        // the problem is that before sending the request the artifact content gets serialized, probably ...
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_OPENAPI_YAML_CONTENT);
+
+        var requestInfo = clientV2.groups().byGroupId(groupId).artifacts().toPostRequestInformation(content, config -> {
+            config.queryParameters.canonical = false;
+            config.queryParameters.ifExists = "FAIL";
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+            config.headers.add("X-Registry-Version", version);
+            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
+        });
+        requestInfo.pathParameters.put("baseurl", registryApiBaseUrl);
+//        requestInfo.setStreamContent(IOUtils.toInputStream(ARTIFACT_OPENAPI_YAML_CONTENT, StandardCharsets.UTF_8));
+        requestInfo.setStreamContent(IOUtils.toInputStream(ARTIFACT_OPENAPI_JSON_CONTENT, StandardCharsets.UTF_8));
+        final ArtifactMetaData created =
+                (ArtifactMetaData)anonymousAdapter.<ArtifactMetaData>sendAsync(requestInfo, ArtifactMetaData::createFromDiscriminatorValue, new HashMap()).get(3, TimeUnit.SECONDS);
+
+//        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+//            config.queryParameters.canonical = false;
+//            config.queryParameters.ifExists = "FAIL";
+//            config.headers.add("X-Registry-ArtifactId", artifactId);
+//            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+//            config.headers.add("X-Registry-Name", name);
+//            config.headers.add("X-Registry-Description", description);
+//            config.headers.add("X-Registry-Version", version);
+//            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
+//        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(created);
+        assertEquals(groupId, created.getGroupId());
+        assertEquals(artifactId, created.getId());
+        assertEquals(version, created.getVersion());
+        assertEquals(name, created.getName());
+        assertEquals(description, created.getDescription());
+//        assertMultilineTextEquals(ARTIFACT_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+    }
+
+
+    @Test
+    public void testCreateArtifactVersion() throws Exception {
+        //Preparation
+        final String groupId = "testCreateArtifactVersion";
+        final String artifactId = generateArtifactId();
+
+        final String version = "2";
+        final String name = "testCreateArtifactVersionName";
+        final String description = "testCreateArtifactVersionDescription";
+
+        createArtifact(groupId, artifactId);
+
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(UPDATED_CONTENT);
+        VersionMetaData versionMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().post(content, config -> {
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+            config.headers.add("X-Registry-Version", version);
+            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
+        }).get(3, TimeUnit.SECONDS);
+
+        ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(versionMetaData);
+        assertEquals(version, versionMetaData.getVersion());
+        assertEquals(name, versionMetaData.getName());
+        assertEquals(description, versionMetaData.getDescription());
+
+        assertNotNull(amd);
+        assertEquals(version, amd.getVersion());
+        assertEquals(name, amd.getName());
+        assertEquals(description, amd.getDescription());
+
+        assertEquals(UPDATED_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+    }
+
 //    @Test
 //    public void testCreateYamlArtifactVersion() throws Exception {
 //        //Preparation
@@ -1226,12 +1283,19 @@
 //                .forEach(s -> assertNull(s.getGroupId()));
 //
 //    }
-//
-//    private ArtifactMetaData createArtifact(String groupId, String artifactId) throws Exception {
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null, ArtifactType.JSON, IfExists.FAIL, false, stream);
-//        return checkArtifact(groupId, artifactId, created);
-//    }
+
+    private ArtifactMetaData createArtifact(String groupId, String artifactId) throws Exception {
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.queryParameters.canonical = false;
+            config.queryParameters.ifExists = "FAIL";
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("X-Registry-Name", artifactId);
+        }).get(3, TimeUnit.SECONDS);
+        return checkArtifact(groupId, artifactId, created);
+    }
 //
 //    private ArtifactMetaData createArtifactWithReferences(String groupId, String artifactId, List<ArtifactReference> artifactReferences) throws Exception {
 //        final InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
@@ -1241,18 +1305,18 @@
 //        return checkArtifact(groupId, artifactId, created);
 //    }
 //
-//    @NotNull
-//    private ArtifactMetaData checkArtifact(String groupId, String artifactId, ArtifactMetaData created) throws Exception {
-//        assertNotNull(created);
-//        if (groupId == null || groupId.equals("default")) {
-//            assertNull(created.getGroupId());
-//        } else {
-//            assertEquals(groupId, created.getGroupId());
-//        }
-//        assertEquals(artifactId, created.getId());
-//
-//        return created;
-//    }
+    @NotNull
+    private ArtifactMetaData checkArtifact(String groupId, String artifactId, ArtifactMetaData created) throws Exception {
+        assertNotNull(created);
+        if (groupId == null || groupId.equals("default")) {
+            assertNull(created.getGroupId());
+        } else {
+            assertEquals(groupId, created.getGroupId());
+        }
+        assertEquals(artifactId, created.getId());
+
+        return created;
+    }
 //
 //    private ArtifactMetaData createOpenAPIArtifact(String groupId, String artifactId) throws Exception {
 //        final InputStream stream = IoUtil.toStream(ARTIFACT_OPENAPI_JSON_CONTENT.getBytes(StandardCharsets.UTF_8));
@@ -1555,5 +1619,5 @@
 //        assertEquals(v2md.getContentId(), vmd.getContentId());
 //    }
 //
-//
-//}
+
+}

@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 import com.microsoft.kiota.ApiException;
+import com.microsoft.kiota.RequestAdapter;
 import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
 import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.registry.rest.client.models.ArtifactMetaData;
@@ -86,10 +87,10 @@ public abstract class AbstractResourceTestBase extends AbstractRegistryTestBase 
         //storage.deleteAllUserData();
     }
 
+    protected final RequestAdapter anonymousAdapter = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
     protected RegistryClient createRestClientV2() {
-        var adapter = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-        adapter.setBaseUrl(registryV2ApiUrl);
-        var client = new RegistryClient(adapter);
+        anonymousAdapter.setBaseUrl(registryV2ApiUrl);
+        var client = new RegistryClient(anonymousAdapter);
         return client;
     }
 

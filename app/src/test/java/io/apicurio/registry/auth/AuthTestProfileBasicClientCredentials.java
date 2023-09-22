@@ -96,7 +96,6 @@ public class AuthTestProfileBasicClientCredentials extends AbstractResourceTestB
                         config.headers.add("X-Registry-ArtifactId", artifactId);
                     }).get(3, TimeUnit.SECONDS);
 
-            Log.error("DEBUG: " + res);
             TestUtils.retry(() ->
                     client
                             .groups()

@@ -208,16 +208,6 @@ public class ERCache<V> {
                         && e.getCause().getCause() != null && e.getCause().getCause() instanceof ApiException
                         && (((ApiException) e.getCause().getCause()).responseStatusCode == 429)))
                     return Result.error(new RuntimeException(e));
-// TODO: double check
-//            } catch (Exception e) {
-//                // Rethrow the exception if we are not going to retry any more OR
-//                // the exception is NOT caused by throttling. This prevents
-//                // retries in cases where it does not make sense,
-//                // e.g. an ArtifactNotFoundException is thrown.
-//                // TODO Add additional exceptions that should cause a retry.
-//                if (i == retries || !((e instanceof ApiException) && (((ApiException)e).responseStatusCode == 429)))
-//                    return Result.error(new RuntimeException(e));
-//            }
             }
             try {
                 Thread.sleep(backoff.toMillis());
