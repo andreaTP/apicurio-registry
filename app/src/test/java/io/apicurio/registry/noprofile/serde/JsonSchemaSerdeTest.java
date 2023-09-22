@@ -44,7 +44,6 @@ import io.apicurio.registry.support.City;
 import io.apicurio.registry.support.Person;
 import io.apicurio.registry.support.Qualification;
 import io.apicurio.registry.types.ArtifactType;
-import io.apicurio.registry.types.ContentTypes;
 import io.apicurio.registry.utils.IoUtil;
 import io.apicurio.registry.utils.tests.TestUtils;
 import io.quarkus.test.junit.QuarkusTest;
