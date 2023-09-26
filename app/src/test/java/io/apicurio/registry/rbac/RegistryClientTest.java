@@ -23,7 +23,8 @@ import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.models.*;
 import io.apicurio.registry.rest.client.models.Properties;
 import io.apicurio.registry.storage.impl.sql.SqlUtil;
-import io.apicurio.registry.types.*;
+import io.apicurio.registry.types.ArtifactType;
+import io.apicurio.registry.types.ContentTypes;
 import io.apicurio.registry.utils.IoUtil;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.apicurio.registry.utils.tests.ApplicationRbacEnabledProfile;
@@ -36,6 +37,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -43,6 +45,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -203,14 +206,9 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         final String description = "testCreateYamlArtifactDescription";
 
         //Execution
-
-        // TODO: this is a bug in Kiota, to be fixed to match the content
-        // the problem is that before sending the request the artifact content gets serialized, probably ...
-
         ArtifactContent content = new ArtifactContent();
         content.setContent(ARTIFACT_OPENAPI_YAML_CONTENT);
-
-        var requestInfo = clientV2.groups().byGroupId(groupId).artifacts().toPostRequestInformation(content, config -> {
+        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
             config.queryParameters.canonical = false;
             config.queryParameters.ifExists = "FAIL";
             config.headers.add("X-Registry-ArtifactId", artifactId);
@@ -218,24 +216,8 @@ public class RegistryClientTest extends AbstractResourceTestBase {
             config.headers.add("X-Registry-Name", name);
             config.headers.add("X-Registry-Description", description);
             config.headers.add("X-Registry-Version", version);
-            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
-        });
-        requestInfo.pathParameters.put("baseurl", registryApiBaseUrl);
-//        requestInfo.setStreamContent(IOUtils.toInputStream(ARTIFACT_OPENAPI_YAML_CONTENT, StandardCharsets.UTF_8));
-        requestInfo.setStreamContent(IOUtils.toInputStream(ARTIFACT_OPENAPI_JSON_CONTENT, StandardCharsets.UTF_8));
-        final ArtifactMetaData created =
-                (ArtifactMetaData)anonymousAdapter.<ArtifactMetaData>sendAsync(requestInfo, ArtifactMetaData::createFromDiscriminatorValue, new HashMap()).get(3, TimeUnit.SECONDS);
-
-//        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
-//            config.queryParameters.canonical = false;
-//            config.queryParameters.ifExists = "FAIL";
-//            config.headers.add("X-Registry-ArtifactId", artifactId);
-//            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
-//            config.headers.add("X-Registry-Name", name);
-//            config.headers.add("X-Registry-Description", description);
-//            config.headers.add("X-Registry-Version", version);
-//            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
-//        }).get(3, TimeUnit.SECONDS);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
 
         //Assertions
         assertNotNull(created);
@@ -244,9 +226,8 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         assertEquals(version, created.getVersion());
         assertEquals(name, created.getName());
         assertEquals(description, created.getDescription());
-//        assertMultilineTextEquals(ARTIFACT_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+        assertMultilineTextEquals(ARTIFACT_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
     }
-
 
     @Test
     public void testCreateArtifactVersion() throws Exception {
@@ -267,7 +248,8 @@ public class RegistryClientTest extends AbstractResourceTestBase {
             config.headers.add("X-Registry-Name", name);
             config.headers.add("X-Registry-Description", description);
             config.headers.add("X-Registry-Version", version);
-            config.headers.add("Content-Type", ContentTypes.APPLICATION_YAML);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+            config.headers.add("Content-Type", "application/create.extended+json");
         }).get(3, TimeUnit.SECONDS);
 
         ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
@@ -286,436 +268,572 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         assertEquals(UPDATED_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
     }
 
-//    @Test
-//    public void testCreateYamlArtifactVersion() throws Exception {
-//        //Preparation
-//        final String groupId = "testCreateYamlArtifactVersion";
-//        final String artifactId = generateArtifactId();
-//
-//        final String version = "2";
-//        final String name = "testCreateYamlArtifactVersionName";
-//        final String description = "testCreateYamlArtifactVersionDescription";
-//
-//        createOpenAPIArtifact(groupId, artifactId); // Create first version of the openapi artifact using JSON
-//
-//        //Execution
-//        final InputStream stream = IoUtil.toStream(UPDATED_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        VersionMetaData versionMetaData = clientV2.createArtifactVersion(groupId, artifactId, version, name, description, ContentTypes.APPLICATION_YAML, stream);
-//
-//        ArtifactMetaData amd = clientV2.getArtifactMetaData(groupId, artifactId);
-//
-//        //Assertions
-//        assertNotNull(versionMetaData);
-//        assertEquals(version, versionMetaData.getVersion());
-//        assertEquals(name, versionMetaData.getName());
-//        assertEquals(description, versionMetaData.getDescription());
-//
-//        assertNotNull(amd);
-//        assertEquals(version, amd.getVersion());
-//        assertEquals(name, amd.getName());
-//        assertEquals(description, amd.getDescription());
-//
-//        assertMultilineTextEquals(UPDATED_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//    }
-//
-//    @Test
-//    public void testAsyncCRUD() throws Exception {
-//        auditLogService.resetAuditLogs();
-//        //Preparation
-//        final String groupId = "testAsyncCRUD";
-//        String artifactId = generateArtifactId();
-//
-//        //Execution
-//        try {
-//            InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
-//            ArtifactMetaData amd = clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, stream);
-//            Assertions.assertNotNull(amd);
-//
-//            EditableMetaData emd = new EditableMetaData();
-//            emd.setName("testAsyncCRUD");
-//
-//            clientV2.updateArtifactMetaData(groupId, artifactId, emd);
-//
-//            //Assertions
-//            retry(() -> {
-//                ArtifactMetaData artifactMetaData = clientV2
-//                        .getArtifactMetaData(groupId, artifactId);
-//                Assertions.assertNotNull(artifactMetaData);
-//                Assertions.assertEquals("testAsyncCRUD", artifactMetaData.getName());
-//            });
-//
-//            stream = IoUtil.toStream(UPDATED_CONTENT.getBytes(StandardCharsets.UTF_8));
-//
-//            //Execution
-//            clientV2.updateArtifact(groupId, artifactId, stream);
-//
-//            //Assertions
-//            assertEquals(UPDATED_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//
-//            List<Map<String, String>> auditLogs = auditLogService.getAuditLogs();
-//            assertFalse(auditLogs.isEmpty());
-//            assertEquals(3, auditLogs.size()); //Expected size 3 since we performed 3 audited operations
-//
-//        } finally {
-//            clientV2.deleteArtifact(groupId, artifactId);
-//        }
-//    }
-//
-//    @Test
-//    public void testSmoke() throws Exception {
-//        //Preparation
-//        final String groupId = "testSmoke";
-//        final String artifactId1 = generateArtifactId();
-//        final String artifactId2 = generateArtifactId();
-//
-//        createArtifact(groupId, artifactId1);
-//        createArtifact(groupId, artifactId2);
-//
-//        //Execution
-//        final ArtifactSearchResults searchResults = clientV2.listArtifactsInGroup(groupId, SortBy.name, SortOrder.asc, 0, 2);
-//
-//        //Assertions
-//        assertNotNull(clientV2.toString());
-//        assertEquals(clientV2.hashCode(), clientV2.hashCode());
-//        assertEquals(2, searchResults.getCount());
-//
-//        //Preparation
-//        clientV2.deleteArtifact(groupId, artifactId1);
-//        clientV2.deleteArtifact(groupId, artifactId2);
-//
-//        TestUtils.retry(() -> {
-//            //Execution
-//            final ArtifactSearchResults deletedResults = clientV2.listArtifactsInGroup(groupId, SortBy.name, SortOrder.asc, 0, 2);
-//            //Assertion
-//            assertEquals(0, deletedResults.getCount());
-//        });
-//    }
-//
-//    @Test
-//    void testSearchArtifact() throws Exception {
-//        //PReparation
-//        final String groupId = "testSearchArtifact";
-//        clientV2.listArtifactsInGroup(groupId);
-//
-//        String artifactId = UUID.randomUUID().toString();
-//        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
-//        InputStream artifactData = IoUtil.toStream(
-//                ("{\"type\":\"record\",\"title\":\"" + name
-//                        + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                        .getBytes(StandardCharsets.UTF_8));
-//
-//        clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, artifactData);
-//
-//        //Execution
-//        ArtifactSearchResults results = clientV2.searchArtifacts(null, name, null, null, null, SortBy.name, SortOrder.asc, 0, 10);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(1, results.getCount());
-//        Assertions.assertEquals(1, results.getArtifacts().size());
+    @Test
+    public void testCreateYamlArtifactVersion() throws Exception {
+        //Preparation
+        final String groupId = "testCreateYamlArtifactVersion";
+        final String artifactId = generateArtifactId();
+
+        final String version = "2";
+        final String name = "testCreateYamlArtifactVersionName";
+        final String description = "testCreateYamlArtifactVersionDescription";
+
+        createOpenAPIArtifact(groupId, artifactId); // Create first version of the openapi artifact using JSON
+
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(UPDATED_OPENAPI_YAML_CONTENT);
+        var postReq = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().toPostRequestInformation(content, config -> {
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+            config.headers.add("X-Registry-Version", version);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+        });
+        // HACK to set the correct body content
+        postReq.setStreamContent(new ByteArrayInputStream(UPDATED_OPENAPI_YAML_CONTENT.getBytes()));
+        // HACK to set the correct header
+        postReq.headers.replace("Content-Type", Set.of(ContentTypes.APPLICATION_YAML));
+        VersionMetaData versionMetaData = anonymousAdapter.sendAsync(postReq, VersionMetaData::createFromDiscriminatorValue, new HashMap<>()).get(3, TimeUnit.SECONDS);
+
+        ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(versionMetaData);
+        assertEquals(version, versionMetaData.getVersion());
+        assertEquals(name, versionMetaData.getName());
+        assertEquals(description, versionMetaData.getDescription());
+
+        assertNotNull(amd);
+        assertEquals(version, amd.getVersion());
+        assertEquals(name, amd.getName());
+        assertEquals(description, amd.getDescription());
+
+        assertMultilineTextEquals(UPDATED_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+    }
+
+    @Test
+    public void testAsyncCRUD() throws Exception {
+        auditLogService.resetAuditLogs();
+        //Preparation
+        final String groupId = "testAsyncCRUD";
+        String artifactId = generateArtifactId();
+
+        //Execution
+        try {
+            ArtifactContent content = new ArtifactContent();
+            content.setContent(ARTIFACT_CONTENT);
+            ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", artifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+            Assertions.assertNotNull(amd);
+
+            Thread.sleep(2000);
+
+            EditableMetaData emd = new EditableMetaData();
+            emd.setName("testAsyncCRUD");
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().put(emd).get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            retry(() -> {
+                ArtifactMetaData artifactMetaData = clientV2
+                        .groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+                Assertions.assertNotNull(artifactMetaData);
+                Assertions.assertEquals("testAsyncCRUD", artifactMetaData.getName());
+            });
+
+            content.setContent(UPDATED_CONTENT);
+
+            //Execution
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).put(content).get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            assertEquals(UPDATED_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+
+            List<Map<String, String>> auditLogs = auditLogService.getAuditLogs();
+            assertFalse(auditLogs.isEmpty());
+            assertEquals(3, auditLogs.size()); //Expected size 3 since we performed 3 audited operations
+
+        } finally {
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void testSmoke() throws Exception {
+        //Preparation
+        final String groupId = "testSmoke";
+        final String artifactId1 = generateArtifactId();
+        final String artifactId2 = generateArtifactId();
+
+        createArtifact(groupId, artifactId1);
+        createArtifact(groupId, artifactId2);
+
+        //Execution
+        final ArtifactSearchResults searchResults = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.group = groupId;
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 2;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(clientV2.toString());
+        assertEquals(clientV2.hashCode(), clientV2.hashCode());
+        assertEquals(2, searchResults.getCount());
+
+        //Preparation
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId1).delete().get(3, TimeUnit.SECONDS);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId2).delete().get(3, TimeUnit.SECONDS);
+
+        TestUtils.retry(() -> {
+            //Execution
+            final ArtifactSearchResults deletedResults = clientV2.search().artifacts().get(config -> {
+                config.queryParameters.group = groupId;
+                config.queryParameters.offset = 0;
+                config.queryParameters.limit = 2;
+                config.queryParameters.orderby = "name";
+                config.queryParameters.order = "asc";
+            }).get(3, TimeUnit.SECONDS);
+            //Assertion
+            assertEquals(0, deletedResults.getCount());
+        });
+    }
+
+    @Test
+    void testSearchArtifact() throws Exception {
+        //PReparation
+        final String groupId = "testSearchArtifact";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+        String artifactId = UUID.randomUUID().toString();
+        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
+        String artifactData = "{\"type\":\"record\",\"title\":\"" + name
+                        + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(artifactData);
+        clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+
+        //Execution
+        ArtifactSearchResults results = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.name = name;
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(1, results.getCount());
+        Assertions.assertEquals(1, results.getArtifacts().size());
+        Assertions.assertEquals(name, results.getArtifacts().get(0).getName());
+
+        // Try searching for *everything*.  This test was added due to Issue #661
+        results = clientV2.search().artifacts().get().get(3, TimeUnit.SECONDS);
+        Assertions.assertNotNull(results);
+        Assertions.assertTrue(results.getCount() > 0);
+    }
+
+    @Test
+    void testSearchArtifactSortByCreatedOn() throws Exception {
+        //PReparation
+        final String groupId = "testSearchArtifactSortByCreatedOn";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+        String artifactId = UUID.randomUUID().toString();
+        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
+        String data = ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}");
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(data);
+        ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+        LOGGER.info("created " + amd.getId() + " - " + amd.getCreatedOn());
+
+        Thread.sleep(1500);
+
+        String artifactId2 = UUID.randomUUID().toString();
+        ArtifactMetaData amd2 = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId2);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+        LOGGER.info("created " + amd2.getId() + " - " + amd2.getCreatedOn());
+
+        //Execution
+        ArtifactSearchResults results = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.name = name;
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "createdOn";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(2, results.getCount());
+        Assertions.assertEquals(2, results.getArtifacts().size());
 //        Assertions.assertEquals(name, results.getArtifacts().get(0).getName());
-//
-//        // Try searching for *everything*.  This test was added due to Issue #661
-//        results = clientV2.searchArtifacts(null, null, null, null, null, null, null, null, null);
-//        Assertions.assertNotNull(results);
-//        Assertions.assertTrue(results.getCount() > 0);
-//    }
-//
-//    @Test
-//    void testSearchArtifactSortByCreatedOn() throws Exception {
-//        //PReparation
-//        final String groupId = "testSearchArtifactSortByCreatedOn";
-//        clientV2.listArtifactsInGroup(groupId);
-//
-//        String artifactId = UUID.randomUUID().toString();
-//        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
-//        byte[] content = ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                .getBytes(StandardCharsets.UTF_8);
-//
-//        ArtifactMetaData amd = clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, IoUtil.toStream(content));
-//        LOGGER.info("created " + amd.getId() + " - " + amd.getCreatedOn());
-//
-//        Thread.sleep(1500);
-//
-//        String artifactId2 = UUID.randomUUID().toString();
-//        ArtifactMetaData amd2 = clientV2.createArtifact(groupId, artifactId2, ArtifactType.JSON, IoUtil.toStream(content));
-//        LOGGER.info("created " + amd2.getId() + " - " + amd2.getCreatedOn());
-//
-//        //Execution
-//        ArtifactSearchResults results = clientV2.searchArtifacts(null, name, null, null, null, SortBy.createdOn, SortOrder.asc, 0, 10);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(2, results.getCount());
-//        Assertions.assertEquals(2, results.getArtifacts().size());
-////        Assertions.assertEquals(name, results.getArtifacts().get(0).getName());
-//
-//        LOGGER.info("search");
-//        LOGGER.info(results.getArtifacts().get(0).getId() + " - " + results.getArtifacts().get(0).getCreatedOn());
-//        LOGGER.info(results.getArtifacts().get(1).getId() + " - " + results.getArtifacts().get(1).getCreatedOn());
-//
-//        Assertions.assertEquals(artifactId, results.getArtifacts().get(0).getId());
-//
-//        // Try searching for *everything*.  This test was added due to Issue #661
-//        results = clientV2.searchArtifacts(null, null, null, null, null, null, null, null, null);
-//        Assertions.assertNotNull(results);
-//        Assertions.assertTrue(results.getCount() > 0);
-//    }
-//
-//    @Test
-//    void testSearchArtifactByIds() throws Exception {
-//        //PReparation
-//        final String groupId = "testSearchArtifactByIds";
-//        clientV2.listArtifactsInGroup(groupId);
-//
-//        String artifactId = UUID.randomUUID().toString();
-//        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
-//        byte[] content = ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                .getBytes(StandardCharsets.UTF_8);
-//
-//        ArtifactMetaData amd = clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, IoUtil.toStream(content));
-//        LOGGER.info("created " + amd.getId() + " - " + amd.getCreatedOn());
-//
-//        Thread.sleep(1500);
-//
-//        String artifactId2 = UUID.randomUUID().toString();
-//        ArtifactMetaData amd2 = clientV2.createArtifact(groupId, artifactId2, ArtifactType.JSON, IoUtil.toStream(content));
-//        LOGGER.info("created " + amd2.getId() + " - " + amd2.getCreatedOn());
-//
-//        ArtifactSearchResults results = clientV2.searchArtifacts(null, null, null, null, null, amd.getGlobalId(), null, SortBy.name, SortOrder.asc, 0, 10);
-//
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(1, results.getCount());
-//        Assertions.assertEquals(1, results.getArtifacts().size());
-//
-//        Assertions.assertEquals(artifactId, results.getArtifacts().get(0).getId());
-//
-//        ArtifactSearchResults resultsByContentId = clientV2.searchArtifacts(null, null, null, null, null, null, amd.getContentId(), SortBy.name, SortOrder.asc, 0, 10);
-//        Assertions.assertNotNull(resultsByContentId);
-//        Assertions.assertEquals(2, resultsByContentId.getCount());
-//        Assertions.assertEquals(2, resultsByContentId.getArtifacts().size());
-//
-//        Assertions.assertEquals(2, resultsByContentId.getArtifacts().stream()
-//                .filter(sa -> sa.getId().equals(amd.getId()) || sa.getId().equals(amd2.getId()))
-//                .count());
-//    }
-//
-//    @Test
-//    void testSearchVersion() throws Exception {
-//        //Preparation
-//        final String groupId = "testSearchVersion";
-//        clientV2.listArtifactsInGroup(groupId);
-//
-//        String artifactId = UUID.randomUUID().toString();
-//        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
-//        InputStream artifactData = IoUtil.toStream(
-//                ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                        .getBytes(StandardCharsets.UTF_8));
-//
-//        clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, artifactData);
-//        artifactData.reset(); // a must between usage!!
+
+        LOGGER.info("search");
+        LOGGER.info(results.getArtifacts().get(0).getId() + " - " + results.getArtifacts().get(0).getCreatedOn());
+        LOGGER.info(results.getArtifacts().get(1).getId() + " - " + results.getArtifacts().get(1).getCreatedOn());
+
+        Assertions.assertEquals(artifactId, results.getArtifacts().get(0).getId());
+
+        // Try searching for *everything*.  This test was added due to Issue #661
+        results = clientV2.search().artifacts().get().get(3, TimeUnit.SECONDS);
+        Assertions.assertNotNull(results);
+        Assertions.assertTrue(results.getCount() > 0);
+    }
+
+    @Test
+    void testSearchArtifactByIds() throws Exception {
+        //PReparation
+        final String groupId = "testSearchArtifactByIds";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+        String artifactId = UUID.randomUUID().toString();
+        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
+        String data = "{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(data);
+        ArtifactMetaData amd = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+        LOGGER.info("created " + amd.getId() + " - " + amd.getCreatedOn());
+
+        Thread.sleep(1500);
+
+        String artifactId2 = UUID.randomUUID().toString();
+        ArtifactMetaData amd2 = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId2);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+        LOGGER.info("created " + amd2.getId() + " - " + amd2.getCreatedOn());
+
+        ArtifactSearchResults results = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.globalId = amd.getGlobalId();
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(1, results.getCount());
+        Assertions.assertEquals(1, results.getArtifacts().size());
+
+        Assertions.assertEquals(artifactId, results.getArtifacts().get(0).getId());
+
+        ArtifactSearchResults resultsByContentId = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.contentId = amd.getContentId();
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        Assertions.assertNotNull(resultsByContentId);
+        Assertions.assertEquals(2, resultsByContentId.getCount());
+        Assertions.assertEquals(2, resultsByContentId.getArtifacts().size());
+
+        Assertions.assertEquals(2, resultsByContentId.getArtifacts().stream()
+                .filter(sa -> sa.getId().equals(amd.getId()) || sa.getId().equals(amd2.getId()))
+                .count());
+    }
+
+    @Test
+    void testSearchVersion() throws Exception {
+        //Preparation
+        final String groupId = "testSearchVersion";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+        String artifactId = UUID.randomUUID().toString();
+        String name = "n" + ThreadLocalRandom.current().nextInt(1000000);
+        String artifactData = "{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(artifactData);
+        clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
 //        clientV2.createArtifactVersion(groupId, artifactId, null, artifactData);
-//
-//
-//        //Execution
-//        VersionSearchResults results = clientV2.listArtifactVersions(groupId, artifactId, 0, 2);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(2, results.getCount());
-//        Assertions.assertEquals(2, results.getVersions().size());
-//        Assertions.assertEquals(name, results.getVersions().get(0).getName());
-//    }
-//
-//    @Test
-//    void testSearchDisabledArtifacts() throws Exception {
-//        //Preparation
-//        final String groupId = "testSearchDisabledArtifacts";
-//        clientV2.listArtifactsInGroup(groupId);
-//        String root = "testSearchDisabledArtifact" + ThreadLocalRandom.current().nextInt(1000000);
-//        List<String> artifactIds = new ArrayList<>();
-//        List<String> versions = new ArrayList<>();
-//
-//        for (int i = 0; i < 5; i++) {
-//            String artifactId = root + UUID.randomUUID().toString();
-//            String name = root + i;
-//            InputStream artifactData = IoUtil.toStream(
-//                    ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                            .getBytes(StandardCharsets.UTF_8));
-//
-//            ArtifactMetaData md = clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, artifactData);
-//            artifactIds.add(artifactId);
-//            versions.add(md.getVersion());
-//        }
-//
-//        //Execution
-//        ArtifactSearchResults results = clientV2.searchArtifacts(null, root, null, null, null, SortBy.name, SortOrder.asc, 0, 10);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(5, results.getCount());
-//        Assertions.assertEquals(5, results.getArtifacts().size());
-//        Assertions.assertTrue(results.getArtifacts().stream()
-//                .map(SearchedArtifact::getId)
-//                .collect(Collectors.toList()).containsAll(artifactIds));
-//
-//        //Preparation
-//        // Put 2 of the 5 artifacts in DISABLED state
-//        UpdateState us = new UpdateState();
-//        us.setState(ArtifactState.DISABLED);
-//        clientV2.updateArtifactState(groupId, artifactIds.get(0), us);
-//        clientV2.updateArtifactState(groupId, artifactIds.get(3), us);
-//
-//        //Execution
-//        // Check the search results still include the DISABLED artifacts
-//        results = clientV2.searchArtifacts(null, root, null, null, null, SortBy.name, SortOrder.asc, 0, 10);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(5, results.getCount());
-//        Assertions.assertEquals(5, results.getArtifacts().size());
-//        Assertions.assertTrue(results.getArtifacts().stream()
-//                .map(SearchedArtifact::getId)
-//                .collect(Collectors.toList()).containsAll(artifactIds));
-//        Assertions.assertEquals(2, results.getArtifacts().stream()
-//                .filter(searchedArtifact -> ArtifactState.DISABLED.equals(searchedArtifact.getState()))
-//                .count());
-//        Assertions.assertEquals(3, results.getArtifacts().stream()
-//                .filter(searchedArtifact -> ArtifactState.ENABLED.equals(searchedArtifact.getState()))
-//                .count());
-//    }
-//
-//    @Test
-//    void testSearchDisabledVersions() throws Exception {
-//        //Preparation
-//        final String groupId = "testSearchDisabledVersions";
-//        clientV2.listArtifactsInGroup(groupId);
-//
-//        String artifactId = UUID.randomUUID().toString();
-//        String name = "testSearchDisabledVersions" + ThreadLocalRandom.current().nextInt(1000000);
-//        InputStream artifactData = IoUtil.toStream(
-//                ("{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                        .getBytes(StandardCharsets.UTF_8));
-//
-//        clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, artifactData);
-//        artifactData.reset();
-//
-//        clientV2.createArtifactVersion(groupId, artifactId, null, artifactData);
-//
-//        artifactData.reset();
-//
-//        clientV2.createArtifactVersion(groupId, artifactId, null, artifactData);
-//
-//        //Execution
-//        VersionSearchResults results = clientV2.listArtifactVersions(groupId, artifactId, 0, 5);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(3, results.getCount());
-//        Assertions.assertEquals(3, results.getVersions().size());
-//        Assertions.assertTrue(results.getVersions().stream()
-//                .allMatch(searchedVersion -> name.equals(searchedVersion.getName()) && ArtifactState.ENABLED.equals(searchedVersion.getState())));
-//
-//        //Preparation
-//        // Put 2 of the 3 versions in DISABLED state
-//        UpdateState us = new UpdateState();
-//        us.setState(ArtifactState.DISABLED);
-//        clientV2.updateArtifactVersionState(groupId, artifactId, "1", us);
-//        clientV2.updateArtifactVersionState(groupId, artifactId, "3", us);
-//
-//        //Execution
-//        // Check that the search results still include the DISABLED versions
-//        results = clientV2.listArtifactVersions(groupId, artifactId, 0, 5);
-//
-//        //Assertions
-//        Assertions.assertNotNull(results);
-//        Assertions.assertEquals(3, results.getCount());
-//        Assertions.assertEquals(3, results.getVersions().size());
-//        Assertions.assertTrue(results.getVersions().stream()
-//                .allMatch(searchedVersion -> name.equals(searchedVersion.getName())));
-//        Assertions.assertEquals(2, results.getVersions().stream()
-//                .filter(searchedVersion -> ArtifactState.DISABLED.equals(searchedVersion.getState()))
-//                .count());
-//        Assertions.assertEquals(1, results.getVersions().stream()
-//                .filter(searchedVersion -> ArtifactState.ENABLED.equals(searchedVersion.getState()))
-//                .count());
-//    }
-//
-//    @Test
-//    public void testLabels() throws Exception {
-//        //Preparation
-//        final String groupId = "testLabels";
-//        String artifactId = generateArtifactId();
-//
-//        try {
-//            InputStream stream = IoUtil.toStream("{\"name\":\"redhat\"}".getBytes(StandardCharsets.UTF_8));
-//            clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, stream);
-//            EditableMetaData emd = new EditableMetaData();
-//            emd.setName("testLabels");
-//
-//            final List<String> artifactLabels = Arrays.asList("Open Api", "Awesome Artifact", "JSON", "registry-client-test-testLabels");
-//            emd.setLabels(artifactLabels);
-//
-//            //Execution
-//            clientV2.updateArtifactMetaData(groupId, artifactId, emd);
-//
-//            //Assertions
-//            retry(() -> {
-//                ArtifactMetaData artifactMetaData = clientV2.getArtifactMetaData(groupId, artifactId);
-//                Assertions.assertNotNull(artifactMetaData);
-//                Assertions.assertEquals("testLabels", artifactMetaData.getName());
-//                Assertions.assertEquals(4, artifactMetaData.getLabels().size());
-//                Assertions.assertTrue(artifactMetaData.getLabels().containsAll(artifactLabels));
-//            });
-//
-//            retry((() -> {
-//                ArtifactSearchResults results = clientV2.searchArtifacts(null, "testLabels", null, null, null, SortBy.name, SortOrder.asc, 0, 10);
-//                Assertions.assertNotNull(results);
-//                Assertions.assertEquals(1, results.getCount());
-//                Assertions.assertEquals(1, results.getArtifacts().size());
-//                Assertions.assertTrue(results.getArtifacts().get(0).getLabels().containsAll(artifactLabels));
-//            }));
-//        } finally {
-//            clientV2.deleteArtifact(groupId, artifactId);
-//        }
-//    }
-//
-//    @Test
-//    public void testProperties() throws Exception {
-//        //Preparation
-//        final String groupId = "testProperties";
-//        String artifactId = generateArtifactId();
-//        try {
-//            InputStream stream = IoUtil.toStream("{\"name\":\"redhat\"}".getBytes(StandardCharsets.UTF_8));
-//            clientV2.createArtifact(groupId, artifactId, ArtifactType.JSON, stream);
-//
-//            EditableMetaData emd = new EditableMetaData();
-//            emd.setName("testProperties");
-//
-//            final Map<String, String> artifactProperties = new HashMap<>();
-//            artifactProperties.put("extraProperty1", "value for extra property 1");
-//            artifactProperties.put("extraProperty2", "value for extra property 2");
-//            artifactProperties.put("extraProperty3", "value for extra property 3");
-//            emd.setProperties(artifactProperties);
-//
-//            //Execution
-//            clientV2.updateArtifactMetaData(groupId, artifactId, emd);
-//
-//            //Assertions
-//            retry(() -> {
-//                ArtifactMetaData artifactMetaData = clientV2.getArtifactMetaData(groupId, artifactId);
-//                Assertions.assertNotNull(artifactMetaData);
-//                Assertions.assertEquals("testProperties", artifactMetaData.getName());
-//                Assertions.assertEquals(3, artifactMetaData.getProperties().size());
-//                Assertions.assertTrue(artifactMetaData.getProperties().keySet().containsAll(artifactProperties.keySet()));
-//                for (String key : artifactMetaData.getProperties().keySet()) {
-//                    assertEquals(artifactMetaData.getProperties().get(key), artifactProperties.get(key));
-//                }
-//            });
-//        } finally {
-//            clientV2.deleteArtifact(groupId, artifactId);
-//        }
-//    }
+
+
+        //Execution
+        VersionSearchResults results = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().get(config -> {
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 2;
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(2, results.getCount());
+        Assertions.assertEquals(2, results.getVersions().size());
+        Assertions.assertEquals(name, results.getVersions().get(0).getName());
+    }
+
+    @Test
+    void testSearchDisabledArtifacts() throws Exception {
+        //Preparation
+        final String groupId = "testSearchDisabledArtifacts";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+        String root = "testSearchDisabledArtifact" + ThreadLocalRandom.current().nextInt(1000000);
+        List<String> artifactIds = new ArrayList<>();
+        List<String> versions = new ArrayList<>();
+
+        for (int i = 0; i < 5; i++) {
+            String artifactId = root + UUID.randomUUID().toString();
+            String name = root + i;
+            String artifactData = "{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+            ArtifactContent content = new ArtifactContent();
+            content.setContent(artifactData);
+            ArtifactMetaData md = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", artifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+
+            artifactIds.add(artifactId);
+            versions.add(md.getVersion());
+        }
+
+        //Execution
+        ArtifactSearchResults results = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.name = root;
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+//                clientV2.searchArtifacts(null, root, null, null, null, SortBy.name, SortOrder.asc, 0, 10);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(5, results.getCount());
+        Assertions.assertEquals(5, results.getArtifacts().size());
+        Assertions.assertTrue(results.getArtifacts().stream()
+                .map(SearchedArtifact::getId)
+                .collect(Collectors.toList()).containsAll(artifactIds));
+
+        //Preparation
+        // Put 2 of the 5 artifacts in DISABLED state
+        UpdateState us = new UpdateState();
+        us.setState(io.apicurio.registry.rest.client.models.ArtifactState.DISABLED);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactIds.get(0)).state().put(us).get(3, TimeUnit.SECONDS);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactIds.get(3)).state().put(us).get(3, TimeUnit.SECONDS);
+
+        //Execution
+        // Check the search results still include the DISABLED artifacts
+        results = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.name = root;
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 10;
+            config.queryParameters.orderby = "name";
+            config.queryParameters.order = "asc";
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(5, results.getCount());
+        Assertions.assertEquals(5, results.getArtifacts().size());
+        Assertions.assertTrue(results.getArtifacts().stream()
+                .map(SearchedArtifact::getId)
+                .collect(Collectors.toList()).containsAll(artifactIds));
+        Assertions.assertEquals(2, results.getArtifacts().stream()
+                .filter(searchedArtifact -> io.apicurio.registry.rest.client.models.ArtifactState.DISABLED.equals(searchedArtifact.getState()))
+                .count());
+        Assertions.assertEquals(3, results.getArtifacts().stream()
+                .filter(searchedArtifact -> io.apicurio.registry.rest.client.models.ArtifactState.ENABLED.equals(searchedArtifact.getState()))
+                .count());
+    }
+
+    @Test
+    void testSearchDisabledVersions() throws Exception {
+        //Preparation
+        final String groupId = "testSearchDisabledVersions";
+        clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+        String artifactId = UUID.randomUUID().toString();
+        String name = "testSearchDisabledVersions" + ThreadLocalRandom.current().nextInt(1000000);
+        String artifactData = "{\"type\":\"record\",\"title\":\"" + name + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(artifactData);
+        clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+        }).get(3, TimeUnit.SECONDS);
+
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+        }).get(3, TimeUnit.SECONDS);
+
+        //Execution
+        VersionSearchResults results = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().get(config -> {
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 5;
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(3, results.getCount());
+        Assertions.assertEquals(3, results.getVersions().size());
+        Assertions.assertTrue(results.getVersions().stream()
+                .allMatch(searchedVersion -> name.equals(searchedVersion.getName()) && ArtifactState.ENABLED.equals(searchedVersion.getState())));
+
+        //Preparation
+        // Put 2 of the 3 versions in DISABLED state
+        UpdateState us = new UpdateState();
+        us.setState(ArtifactState.DISABLED);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().byVersion("1").state().put(us).get(3, TimeUnit.SECONDS);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().byVersion("3").state().put(us).get(3, TimeUnit.SECONDS);
+
+        //Execution
+        // Check that the search results still include the DISABLED versions
+        results = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().get(config -> {
+            config.queryParameters.offset = 0;
+            config.queryParameters.limit = 5;
+        }).get(3, TimeUnit.SECONDS);
+
+
+        //Assertions
+        Assertions.assertNotNull(results);
+        Assertions.assertEquals(3, results.getCount());
+        Assertions.assertEquals(3, results.getVersions().size());
+        Assertions.assertTrue(results.getVersions().stream()
+                .allMatch(searchedVersion -> name.equals(searchedVersion.getName())));
+        Assertions.assertEquals(2, results.getVersions().stream()
+                .filter(searchedVersion -> ArtifactState.DISABLED.equals(searchedVersion.getState()))
+                .count());
+        Assertions.assertEquals(1, results.getVersions().stream()
+                .filter(searchedVersion -> ArtifactState.ENABLED.equals(searchedVersion.getState()))
+                .count());
+    }
+
+    @Test
+    public void testLabels() throws Exception {
+        //Preparation
+        final String groupId = "testLabels";
+        String artifactId = generateArtifactId();
+
+        try {
+            ArtifactContent content = new ArtifactContent();
+            content.setContent("{\"name\":\"redhat\"}");
+            clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", artifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+            EditableMetaData emd = new EditableMetaData();
+            emd.setName("testLabels");
+
+            final List<String> artifactLabels = Arrays.asList("Open Api", "Awesome Artifact", "JSON", "registry-client-test-testLabels");
+            emd.setLabels(artifactLabels);
+
+            //Execution
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().put(emd).get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            retry(() -> {
+                ArtifactMetaData artifactMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+                Assertions.assertNotNull(artifactMetaData);
+                Assertions.assertEquals("testLabels", artifactMetaData.getName());
+                Assertions.assertEquals(4, artifactMetaData.getLabels().size());
+                Assertions.assertTrue(artifactMetaData.getLabels().containsAll(artifactLabels));
+            });
+
+            retry((() -> {
+                ArtifactSearchResults results = clientV2.search().artifacts().get(config -> {
+                    config.queryParameters.offset = 0;
+                    config.queryParameters.limit = 10;
+                    config.queryParameters.name = "testLabels";
+                    config.queryParameters.orderby = "name";
+                    config.queryParameters.order = "asc";
+                }).get(3, TimeUnit.SECONDS);
+                Assertions.assertNotNull(results);
+                Assertions.assertEquals(1, results.getCount());
+                Assertions.assertEquals(1, results.getArtifacts().size());
+                Assertions.assertTrue(results.getArtifacts().get(0).getLabels().containsAll(artifactLabels));
+            }));
+        } finally {
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
+        }
+    }
+
+   @Test
+   public void testProperties() throws Exception {
+       //Preparation
+       final String groupId = "testProperties";
+       String artifactId = generateArtifactId();
+       try {
+            ArtifactContent content = new ArtifactContent();
+            content.setContent("{\"name\":\"redhat\"}");
+            clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", artifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+
+           EditableMetaData emd = new EditableMetaData();
+           emd.setName("testProperties");
+
+           final Map<String, Object> artifactProperties = new HashMap<>();
+           artifactProperties.put("extraProperty1", "value for extra property 1");
+           artifactProperties.put("extraProperty2", "value for extra property 2");
+           artifactProperties.put("extraProperty3", "value for extra property 3");
+           var props = new io.apicurio.registry.rest.client.models.Properties();
+           props.setAdditionalData(artifactProperties);
+           emd.setProperties(props);
+
+           //Execution
+           clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().put(emd).get(3, TimeUnit.SECONDS);
+
+           //Assertions
+           retry(() -> {
+               ArtifactMetaData artifactMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+               Assertions.assertNotNull(artifactMetaData);
+               Assertions.assertEquals("testProperties", artifactMetaData.getName());
+               Assertions.assertEquals(3, artifactMetaData.getProperties().getAdditionalData().size());
+               Assertions.assertTrue(artifactMetaData.getProperties().getAdditionalData().keySet().containsAll(artifactProperties.keySet()));
+               for (String key : artifactMetaData.getProperties().getAdditionalData().keySet()) {
+                   assertEquals(artifactMetaData.getProperties().getAdditionalData().get(key), artifactProperties.get(key));
+               }
+           });
+       } finally {
+           clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
+       }
+   }
 //
 //    @Test
 //    void nameOrderingTest() throws Exception {
@@ -726,7 +844,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        final String thirdArtifactId = "cccTestorder";
 //
 //        try {
-//            clientV2.listArtifactsInGroup(groupId);
+//            clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
 //
 //            // Create artifact 1
 //            String firstName = "aaaTestorder" + ThreadLocalRandom.current().nextInt(1000000);
@@ -990,7 +1108,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //
 //        updateArtifactWithReferences(groupId, secondArtifactId, ArtifactType.AVRO, SCHEMA_WITH_REFERENCE, List.of(artifactReference));
 //
-//        clientV2.deleteArtifact(groupId, artifactId);
+//        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
 //        clientV2.deleteArtifact(groupId, secondArtifactId);
 //    }
 //
@@ -1118,7 +1236,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        createArtifact(groupId, firstArtifactId);
 //        createArtifact(groupId, secondArtifactId);
 //
-//        final ArtifactSearchResults searchResults = clientV2.listArtifactsInGroup(groupId);
+//        final ArtifactSearchResults searchResults = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
 //        assertFalse(searchResults.getArtifacts().isEmpty());
 //        assertEquals(2, (int) searchResults.getCount());
 //
@@ -1126,7 +1244,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        clientV2.deleteArtifactsInGroup(groupId);
 //
 //        TestUtils.retry(() -> {
-//            final ArtifactSearchResults deleted = clientV2.listArtifactsInGroup(groupId);
+//            final ArtifactSearchResults deleted = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
 //
 //            //Assertions
 //            assertTrue(deleted.getArtifacts().isEmpty());
@@ -1317,25 +1435,33 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 
         return created;
     }
-//
-//    private ArtifactMetaData createOpenAPIArtifact(String groupId, String artifactId) throws Exception {
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_OPENAPI_JSON_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null, ArtifactType.OPENAPI, IfExists.FAIL, false, stream);
-//        return checkArtifact(groupId, artifactId, created);
-//    }
-//
+
+    private ArtifactMetaData createOpenAPIArtifact(String groupId, String artifactId) throws Exception {
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_OPENAPI_JSON_CONTENT);
+
+        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.queryParameters.canonical = false;
+            config.queryParameters.ifExists = "FAIL";
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+        return checkArtifact(groupId, artifactId, created);
+    }
+
 //    @SuppressWarnings("unused")
 //    private ArtifactMetaData createOpenAPIYamlArtifact(String groupId, String artifactId) throws Exception {
 //        final InputStream stream = IoUtil.toStream(ARTIFACT_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
 //        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null, ArtifactType.OPENAPI, IfExists.FAIL, false, stream);
 //        return checkArtifact(groupId, artifactId, created);
 //    }
-//
+
 //    private void prepareRuleTest(String groupId, String artifactId, RuleType ruleType, String ruleConfig) throws Exception {
 //        createArtifact(groupId, artifactId);
 //        createArtifactRule(groupId, artifactId, ruleType, ruleConfig);
 //    }
-//
+
 //    @Test
 //    void headersCustomizationTest() throws Exception {
 //
@@ -1346,7 +1472,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        testConcurrentClientCalls(groupId, clientV2, firstRequestHeaders, secondRequestHeaders);
 //        testNonConcurrentClientCalls(groupId, clientV2, firstRequestHeaders, secondRequestHeaders);
 //    }
-//
+
 //    @Test
 //    public void testRoleMappings() throws Exception {
 //        // Start with no role mappings
@@ -1618,6 +1744,4 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        assertEquals(v2md.getId(), vmd.getId());
 //        assertEquals(v2md.getContentId(), vmd.getContentId());
 //    }
-//
-
 }
