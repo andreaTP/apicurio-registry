@@ -1329,137 +1329,141 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         assertEquals(2, searchResults.getCount());
     }
 
-//    @Test
-//    public void smokeGlobalRules() throws Exception {
-//        createGlobalRule(RuleType.COMPATIBILITY, "BACKWARD");
-//        createGlobalRule(RuleType.VALIDITY, "FORWARD");
-//
-//        TestUtils.retry(() -> {
-//            final List<RuleType> globalRules = clientV2.listGlobalRules();
-//            assertEquals(2, globalRules.size());
-//            assertTrue(globalRules.contains(RuleType.COMPATIBILITY));
-//            assertTrue(globalRules.contains(RuleType.VALIDITY));
-//        });
-//        clientV2.deleteAllGlobalRules();
-//        TestUtils.retry(() -> {
-//            final List<RuleType> updatedRules = clientV2.listGlobalRules();
-//            assertEquals(0, updatedRules.size());
-//        });
-//    }
-//
-//    @Test
-//    public void getGlobalRuleConfig() throws Exception {
-//        //Preparation
-//        createGlobalRule(RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            //Execution
-//            final Rule globalRuleConfig = clientV2.getGlobalRuleConfig(RuleType.COMPATIBILITY);
-//            //Assertions
-//            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
-//        });
-//    }
-//
-//    @Test
-//    public void updateGlobalRuleConfig() throws Exception {
-//        //Preparation
-//        createGlobalRule(RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            final Rule globalRuleConfig = clientV2.getGlobalRuleConfig(RuleType.COMPATIBILITY);
-//            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
-//        });
-//
-//        final Rule toUpdate = new Rule();
-//        toUpdate.setType(RuleType.COMPATIBILITY);
-//        toUpdate.setConfig("FORWARD");
-//
-//        //Execution
-//        final Rule updated = clientV2.updateGlobalRuleConfig(RuleType.COMPATIBILITY, toUpdate);
-//
-//        //Assertions
-//        assertEquals(updated.getConfig(), "FORWARD");
-//    }
-//
-//    @Test
-//    public void deleteGlobalRule() throws Exception {
-//        //Preparation
-//        createGlobalRule(RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            final Rule globalRuleConfig = clientV2.getGlobalRuleConfig(RuleType.COMPATIBILITY);
-//            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
-//        });
-//
-//        //Execution
-//        clientV2.deleteGlobalRule(RuleType.COMPATIBILITY);
-//
-//        TestUtils.retry(() -> {
-//            final List<RuleType> ruleTypes = clientV2.listGlobalRules();
-//
-//            //Assertions
-//            assertEquals(0, ruleTypes.size());
-//        });
-//    }
-//
-//    @Test
-//    @DisabledIfEnvironmentVariable(named = AbstractRegistryTestBase.CURRENT_ENV, matches = AbstractRegistryTestBase.CURRENT_ENV_MAS_REGEX)
-//    public void testDefaultGroup() throws Exception {
-//        String nullDefaultGroup = null;
-//        String artifactId1 = "testDefaultGroup-" + UUID.randomUUID().toString();
-//        createArtifact(nullDefaultGroup, artifactId1);
-//        verifyGroupNullInMetadata(artifactId1, IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8)));
-//
-//        String defaultDefaultGroup = "default";
-//        String artifactId2 = "testDefaultGroup-" + UUID.randomUUID().toString();
-//        createArtifact(defaultDefaultGroup, artifactId2);
-//        verifyGroupNullInMetadata(artifactId2, IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8)));
-//
-//        String dummyGroup = "dummy";
-//        String artifactId3 = "testDefaultGroup-" + UUID.randomUUID().toString();
-//        createArtifact(dummyGroup, artifactId3);
-//
-//        ArtifactSearchResults result = clientV2.searchArtifacts(null, null, null, null, null, null, null, null, 100);
-//
-//        SearchedArtifact artifact1 = result.getArtifacts().stream()
-//                .filter(s -> s.getId().equals(artifactId1))
-//                .findFirst()
-//                .orElseThrow();
-//
-//        assertNull(artifact1.getGroupId());
-//
-//        SearchedArtifact artifact2 = result.getArtifacts().stream()
-//                .filter(s -> s.getId().equals(artifactId2))
-//                .findFirst()
-//                .orElseThrow();
-//
-//        assertNull(artifact2.getGroupId());
-//
-//        SearchedArtifact artifact3 = result.getArtifacts().stream()
-//                .filter(s -> s.getId().equals(artifactId3))
-//                .findFirst()
-//                .orElseThrow();
-//
-//        assertEquals(dummyGroup, artifact3.getGroupId());
-//
-//    }
-//
-//    private void verifyGroupNullInMetadata(String artifactId, InputStream content) {
-//        ArtifactMetaData meta = clientV2.getArtifactMetaData(null, artifactId);
-//        assertNull(meta.getGroupId());
-//
-//        VersionMetaData vmeta = clientV2.getArtifactVersionMetaData(null, artifactId, meta.getVersion());
-//        assertNull(vmeta.getGroupId());
-//
-//        vmeta = clientV2.getArtifactVersionMetaDataByContent(null, artifactId, content);
-//        assertNull(vmeta.getGroupId());
-//
-//        clientV2.listArtifactsInGroup(null).getArtifacts()
-//                .stream()
-//                .filter(s -> s.getId().equals(artifactId))
-//                .forEach(s -> assertNull(s.getGroupId()));
-//
-//    }
+    @Test
+    public void smokeGlobalRules() throws Exception {
+        createGlobalRule(io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+        createGlobalRule(io.apicurio.registry.types.RuleType.VALIDITY, "FORWARD");
+
+        TestUtils.retry(() -> {
+            final List<RuleType> globalRules = clientV2.admin().rules().get().get(3, TimeUnit.SECONDS);
+            assertEquals(2, globalRules.size());
+            assertTrue(globalRules.contains(RuleType.COMPATIBILITY));
+            assertTrue(globalRules.contains(RuleType.VALIDITY));
+        });
+        clientV2.admin().rules().delete().get(3, TimeUnit.SECONDS);
+        TestUtils.retry(() -> {
+            final List<RuleType> updatedRules = clientV2.admin().rules().get().get(3, TimeUnit.SECONDS);
+            assertEquals(0, updatedRules.size());
+        });
+    }
+
+    @Test
+    public void getGlobalRuleConfig() throws Exception {
+        //Preparation
+        createGlobalRule(io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            //Execution
+            final Rule globalRuleConfig = clientV2.admin().rules().byRule(RuleType.COMPATIBILITY.name()).get().get(3, TimeUnit.SECONDS);
+            //Assertions
+            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
+        });
+    }
+
+    @Test
+    public void updateGlobalRuleConfig() throws Exception {
+        //Preparation
+        createGlobalRule(io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            final Rule globalRuleConfig = clientV2.admin().rules().byRule(RuleType.COMPATIBILITY.name()).get().get(3, TimeUnit.SECONDS);
+            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
+        });
+
+        final Rule toUpdate = new Rule();
+        toUpdate.setType(RuleType.COMPATIBILITY);
+        toUpdate.setConfig("FORWARD");
+
+        //Execution
+        final Rule updated = clientV2.admin().rules().byRule(RuleType.COMPATIBILITY.name()).put(toUpdate).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertEquals(updated.getConfig(), "FORWARD");
+    }
+
+    @Test
+    public void deleteGlobalRule() throws Exception {
+        //Preparation
+        createGlobalRule(io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            final Rule globalRuleConfig = clientV2.admin().rules().byRule(RuleType.COMPATIBILITY.name()).get().get(3, TimeUnit.SECONDS);
+            assertEquals(globalRuleConfig.getConfig(), "BACKWARD");
+        });
+
+        //Execution
+        clientV2.admin().rules().byRule(RuleType.COMPATIBILITY.name()).delete().get(3, TimeUnit.SECONDS);
+
+        TestUtils.retry(() -> {
+            final List<RuleType> ruleTypes = clientV2.admin().rules().get().get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            assertEquals(0, ruleTypes.size());
+        });
+    }
+
+    @Test
+    @DisabledIfEnvironmentVariable(named = AbstractRegistryTestBase.CURRENT_ENV, matches = AbstractRegistryTestBase.CURRENT_ENV_MAS_REGEX)
+    public void testDefaultGroup() throws Exception {
+        String nullDefaultGroup = "default";
+        String artifactId1 = "testDefaultGroup-" + UUID.randomUUID().toString();
+        createArtifact(nullDefaultGroup, artifactId1);
+        verifyGroupNullInMetadata(artifactId1, ARTIFACT_CONTENT);
+
+        String defaultDefaultGroup = "default";
+        String artifactId2 = "testDefaultGroup-" + UUID.randomUUID().toString();
+        createArtifact(defaultDefaultGroup, artifactId2);
+        verifyGroupNullInMetadata(artifactId2, ARTIFACT_CONTENT);
+
+        String dummyGroup = "dummy";
+        String artifactId3 = "testDefaultGroup-" + UUID.randomUUID().toString();
+        createArtifact(dummyGroup, artifactId3);
+
+        ArtifactSearchResults result = clientV2.search().artifacts().get(config -> {
+            config.queryParameters.limit = 100;
+        }).get(3, TimeUnit.SECONDS);
+
+        SearchedArtifact artifact1 = result.getArtifacts().stream()
+                .filter(s -> s.getId().equals(artifactId1))
+                .findFirst()
+                .orElseThrow();
+
+        assertNull(artifact1.getGroupId());
+
+        SearchedArtifact artifact2 = result.getArtifacts().stream()
+                .filter(s -> s.getId().equals(artifactId2))
+                .findFirst()
+                .orElseThrow();
+
+        assertNull(artifact2.getGroupId());
+
+        SearchedArtifact artifact3 = result.getArtifacts().stream()
+                .filter(s -> s.getId().equals(artifactId3))
+                .findFirst()
+                .orElseThrow();
+
+        assertEquals(dummyGroup, artifact3.getGroupId());
+
+    }
+
+    private void verifyGroupNullInMetadata(String artifactId, String content) throws Exception {
+        ArtifactMetaData meta = clientV2.groups().byGroupId("default").artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+        assertNull(meta.getGroupId());
+
+        VersionMetaData vmeta = clientV2.groups().byGroupId("default").artifacts().byArtifactId(artifactId).versions().byVersion(meta.getVersion()).meta().get().get(3, TimeUnit.SECONDS);
+        assertNull(vmeta.getGroupId());
+
+        ArtifactContent artifactContent = new ArtifactContent();
+        artifactContent.setContent(content);
+        vmeta = clientV2.groups().byGroupId("default").artifacts().byArtifactId(artifactId).versions().post(artifactContent).get(3, TimeUnit.SECONDS);
+        assertNull(vmeta.getGroupId());
+
+        clientV2.groups().byGroupId("default").artifacts().get().get(3, TimeUnit.SECONDS).getArtifacts()
+                .stream()
+                .filter(s -> s.getId().equals(artifactId))
+                .forEach(s -> assertNull(s.getGroupId()));
+
+    }
 
     private ArtifactMetaData createArtifact(String groupId, String artifactId) throws Exception {
         ArtifactContent content = new ArtifactContent();
@@ -1485,8 +1489,6 @@ public class RegistryClientTest extends AbstractResourceTestBase {
             config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
             config.headers.add("X-Registry-Name", artifactId);
         }).get(3, TimeUnit.SECONDS);
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null,
-//                ArtifactType.JSON, IfExists.FAIL, false, null, null, ContentTypes.APPLICATION_CREATE_EXTENDED, null, null, stream, artifactReferences);
 
         return checkArtifact(groupId, artifactId, created);
     }
@@ -1518,113 +1520,95 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         return checkArtifact(groupId, artifactId, created);
     }
 
-//    @SuppressWarnings("unused")
-//    private ArtifactMetaData createOpenAPIYamlArtifact(String groupId, String artifactId) throws Exception {
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null, ArtifactType.OPENAPI, IfExists.FAIL, false, stream);
-//        return checkArtifact(groupId, artifactId, created);
-//    }
-
     private void prepareRuleTest(String groupId, String artifactId, io.apicurio.registry.types.RuleType ruleType, String ruleConfig) throws Exception {
         createArtifact(groupId, artifactId);
         createArtifactRule(groupId, artifactId, ruleType, ruleConfig);
     }
 
-//    @Test
-//    void headersCustomizationTest() throws Exception {
-//
-//        final String groupId = "headersCustomizationTest";
-//        final Map<String, String> firstRequestHeaders = Collections.singletonMap("FirstHeaderKey", "firstheadervalue");
-//        final Map<String, String> secondRequestHeaders = Collections.singletonMap("SecondHeaderKey", "secondheaderkey");
-//
-//        testConcurrentClientCalls(groupId, clientV2, firstRequestHeaders, secondRequestHeaders);
-//        testNonConcurrentClientCalls(groupId, clientV2, firstRequestHeaders, secondRequestHeaders);
-//    }
+    @Test
+    public void testRoleMappings() throws Exception {
+        // Start with no role mappings
+        List<RoleMapping> roleMappings = clientV2.admin().roleMappings().get().get(3, TimeUnit.SECONDS);
+        Assertions.assertTrue(roleMappings.isEmpty());
 
-//    @Test
-//    public void testRoleMappings() throws Exception {
-//        // Start with no role mappings
-//        List<RoleMapping> roleMappings = clientV2.listRoleMappings();
-//        Assertions.assertTrue(roleMappings.isEmpty());
-//
-//        // Add
-//        RoleMapping mapping = new RoleMapping();
-//        mapping.setPrincipalId("TestUser");
-//        mapping.setRole(RoleType.DEVELOPER);
-//        clientV2.createRoleMapping(mapping);
-//
-//        // Verify the mapping was added.
-//        TestUtils.retry(() -> {
-//            RoleMapping roleMapping = clientV2.getRoleMapping("TestUser");
-//            Assertions.assertEquals("TestUser", roleMapping.getPrincipalId());
-//            Assertions.assertEquals(RoleType.DEVELOPER, roleMapping.getRole());
-//        });
-//        TestUtils.retry(() -> {
-//            List<RoleMapping> mappings = clientV2.listRoleMappings();
-//            Assertions.assertEquals(1, mappings.size());
-//            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
-//            Assertions.assertEquals(RoleType.DEVELOPER, mappings.get(0).getRole());
-//        });
-//
-//        // Try to add the rule again - should get a 409
-//        TestUtils.retry(() -> {
-//            Assertions.assertThrows(RoleMappingAlreadyExistsException.class, () -> {
-//                clientV2.createRoleMapping(mapping);
-//            });
-//        });
-//
-//        // Add another mapping
-//        mapping.setPrincipalId("TestUser2");
-//        mapping.setRole(RoleType.ADMIN);
-//        clientV2.createRoleMapping(mapping);
-//
-//        // Get the list of mappings (should be 2 of them)
-//        TestUtils.retry(() -> {
-//            List<RoleMapping> mappings = clientV2.listRoleMappings();
-//            Assertions.assertEquals(2, mappings.size());
-//        });
-//
-//        // Get a single mapping by principal
-//        RoleMapping tu2Mapping = clientV2.getRoleMapping("TestUser2");
-//        Assertions.assertEquals("TestUser2", tu2Mapping.getPrincipalId());
-//        Assertions.assertEquals(RoleType.ADMIN, tu2Mapping.getRole());
-//
-//        // Update a mapping
-//        clientV2.updateRoleMapping("TestUser", RoleType.READ_ONLY);
-//
-//        // Get a single (updated) mapping
-//        TestUtils.retry(() -> {
-//            RoleMapping tum = clientV2.getRoleMapping("TestUser");
-//            Assertions.assertEquals("TestUser", tum.getPrincipalId());
-//            Assertions.assertEquals(RoleType.READ_ONLY, tum.getRole());
-//        });
-//
-//        // Try to update a role mapping that doesn't exist
-//        Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
-//            clientV2.updateRoleMapping("UnknownPrincipal", RoleType.ADMIN);
-//        });
-//
-//        // Delete a role mapping
-//        clientV2.deleteRoleMapping("TestUser2");
-//
-//        // Get the (deleted) mapping by name (should fail with a 404)
-//        TestUtils.retry(() -> {
-//            Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
-//                clientV2.getRoleMapping("TestUser2");
-//            });
-//        });
-//
-//        // Get the list of mappings (should be 1 of them)
-//        TestUtils.retry(() -> {
-//            List<RoleMapping> mappings = clientV2.listRoleMappings();
-//            Assertions.assertEquals(1, mappings.size());
-//            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
-//        });
-//
-//        // Clean up
-//        clientV2.deleteRoleMapping("TestUser");
-//
-//    }
+        // Add
+        RoleMapping mapping = new RoleMapping();
+        mapping.setPrincipalId("TestUser");
+        mapping.setRole(RoleType.DEVELOPER);
+        clientV2.createRoleMapping(mapping);
+
+        // Verify the mapping was added.
+        TestUtils.retry(() -> {
+            RoleMapping roleMapping = clientV2.getRoleMapping("TestUser");
+            Assertions.assertEquals("TestUser", roleMapping.getPrincipalId());
+            Assertions.assertEquals(RoleType.DEVELOPER, roleMapping.getRole());
+        });
+        TestUtils.retry(() -> {
+            List<RoleMapping> mappings = clientV2.listRoleMappings();
+            Assertions.assertEquals(1, mappings.size());
+            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
+            Assertions.assertEquals(RoleType.DEVELOPER, mappings.get(0).getRole());
+        });
+
+        // Try to add the rule again - should get a 409
+        TestUtils.retry(() -> {
+            Assertions.assertThrows(RoleMappingAlreadyExistsException.class, () -> {
+                clientV2.createRoleMapping(mapping);
+            });
+        });
+
+        // Add another mapping
+        mapping.setPrincipalId("TestUser2");
+        mapping.setRole(RoleType.ADMIN);
+        clientV2.createRoleMapping(mapping);
+
+        // Get the list of mappings (should be 2 of them)
+        TestUtils.retry(() -> {
+            List<RoleMapping> mappings = clientV2.listRoleMappings();
+            Assertions.assertEquals(2, mappings.size());
+        });
+
+        // Get a single mapping by principal
+        RoleMapping tu2Mapping = clientV2.getRoleMapping("TestUser2");
+        Assertions.assertEquals("TestUser2", tu2Mapping.getPrincipalId());
+        Assertions.assertEquals(RoleType.ADMIN, tu2Mapping.getRole());
+
+        // Update a mapping
+        clientV2.updateRoleMapping("TestUser", RoleType.READ_ONLY);
+
+        // Get a single (updated) mapping
+        TestUtils.retry(() -> {
+            RoleMapping tum = clientV2.getRoleMapping("TestUser");
+            Assertions.assertEquals("TestUser", tum.getPrincipalId());
+            Assertions.assertEquals(RoleType.READ_ONLY, tum.getRole());
+        });
+
+        // Try to update a role mapping that doesn't exist
+        Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
+            clientV2.updateRoleMapping("UnknownPrincipal", RoleType.ADMIN);
+        });
+
+        // Delete a role mapping
+        clientV2.deleteRoleMapping("TestUser2");
+
+        // Get the (deleted) mapping by name (should fail with a 404)
+        TestUtils.retry(() -> {
+            Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
+                clientV2.getRoleMapping("TestUser2");
+            });
+        });
+
+        // Get the list of mappings (should be 1 of them)
+        TestUtils.retry(() -> {
+            List<RoleMapping> mappings = clientV2.listRoleMappings();
+            Assertions.assertEquals(1, mappings.size());
+            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
+        });
+
+        // Clean up
+        clientV2.deleteRoleMapping("TestUser");
+
+    }
 //
 //    @Test
 //    public void testConfigProperties() throws Exception {
@@ -1712,48 +1696,6 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        Assertions.assertThrows(InvalidPropertyValueException.class, () -> {
 //            clientV2.setConfigProperty("registry.download.href.ttl", "foobar");
 //        });
-//    }
-//
-//
-//    private void testNonConcurrentClientCalls(String groupId, RegistryClient client, Map<String, String> firstRequestHeaders, Map<String, String> secondRequestHeaders) throws InterruptedException {
-//
-//        client.setNextRequestHeaders(firstRequestHeaders);
-//        Assertions.assertTrue(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//        client.listArtifactsInGroup(groupId);
-//        Assertions.assertFalse(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//        Assertions.assertFalse(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//
-//        client.setNextRequestHeaders(secondRequestHeaders);
-//        Assertions.assertTrue(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//        client.listArtifactsInGroup(groupId);
-//        Assertions.assertFalse(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//        Assertions.assertFalse(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//
-//    }
-//
-//    private void testConcurrentClientCalls(String groupId, RegistryClient client, Map<String, String> firstRequestHeaders, Map<String, String> secondRequestHeaders) throws InterruptedException {
-//
-//        final CountDownLatch latch = new CountDownLatch(2);
-//
-//        new Thread(() -> {
-//            client.setNextRequestHeaders(firstRequestHeaders);
-//            Assertions.assertTrue(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//            client.listArtifactsInGroup(groupId);
-//            Assertions.assertFalse(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//            Assertions.assertFalse(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//            latch.countDown();
-//        }).start();
-//
-//        new Thread(() -> {
-//            client.setNextRequestHeaders(secondRequestHeaders);
-//            Assertions.assertTrue(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//            client.listArtifactsInGroup(groupId);
-//            Assertions.assertFalse(client.getHeaders().keySet().containsAll(secondRequestHeaders.keySet()));
-//            Assertions.assertFalse(client.getHeaders().keySet().containsAll(firstRequestHeaders.keySet()));
-//            latch.countDown();
-//        }).start();
-//
-//        latch.await();
 //    }
 //
 //    @Test

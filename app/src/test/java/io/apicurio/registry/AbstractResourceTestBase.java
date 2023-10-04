@@ -271,7 +271,7 @@ public abstract class AbstractResourceTestBase extends AbstractRegistryTestBase 
         return clientV2
                 .admin()
                 .rules()
-                .byRule(ruleConfig)
+                .byRule(ruleType.value())
                 .get()
                 .get(3, TimeUnit.SECONDS);
     }
