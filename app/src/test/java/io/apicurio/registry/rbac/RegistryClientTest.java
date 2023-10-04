@@ -16,6 +16,7 @@
 
 package io.apicurio.registry.rbac;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.kiota.ApiException;
 import io.apicurio.registry.AbstractRegistryTestBase;
 import io.apicurio.registry.AbstractResourceTestBase;
@@ -834,229 +835,267 @@ public class RegistryClientTest extends AbstractResourceTestBase {
            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
        }
    }
-//
-//    @Test
-//    void nameOrderingTest() throws Exception {
-//        //Preparation
-//        final String groupId = "nameOrderingTest";
-//        final String firstArtifactId = generateArtifactId();
-//        final String secondArtifactId = generateArtifactId();
-//        final String thirdArtifactId = "cccTestorder";
-//
-//        try {
-//            clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
-//
-//            // Create artifact 1
-//            String firstName = "aaaTestorder" + ThreadLocalRandom.current().nextInt(1000000);
-//            InputStream artifactData = IoUtil.toStream(
-//                    ("{\"type\":\"record\",\"title\":\"" + firstName + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                            .getBytes(StandardCharsets.UTF_8));
-//
-//            clientV2.createArtifact(groupId, firstArtifactId, ArtifactType.JSON, artifactData);
-//            // Create artifact 2
-//            String secondName = "bbbTestorder" + ThreadLocalRandom.current().nextInt(1000000);
-//            InputStream secondData = IoUtil.toStream(
-//                    ("{\"type\":\"record\",\"title\":\"" + secondName + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}")
-//                            .getBytes(StandardCharsets.UTF_8));
-//
-//            clientV2.createArtifact(groupId, secondArtifactId, ArtifactType.JSON, secondData);
-//            // Create artifact 3
-//            InputStream thirdData = IoUtil.toStream(
-//                    ("{\"openapi\":\"3.0.2\",\"info\":{\"description\":\"testorder\"}}")
-//                            .getBytes(StandardCharsets.UTF_8));
-//            clientV2.createArtifact(groupId, thirdArtifactId, ArtifactType.OPENAPI, thirdData);
-//
-//            retry(() -> {
-//                ArtifactMetaData artifactMetaData = clientV2.getArtifactMetaData(groupId, thirdArtifactId);
-//                Assertions.assertNotNull(artifactMetaData);
-//                Assertions.assertEquals("testorder", artifactMetaData.getDescription());
-//            });
-//
-//            //Execution
-//            ArtifactSearchResults ascResults = clientV2.searchArtifacts(groupId, "Testorder", null, null, null, SortBy.name, SortOrder.asc, 0, 10);
-//
-//            //Assertions
-//            Assertions.assertNotNull(ascResults);
-//            Assertions.assertEquals(3, ascResults.getCount());
-//            Assertions.assertEquals(3, ascResults.getArtifacts().size());
-//            Assertions.assertEquals(firstName, ascResults.getArtifacts().get(0).getName());
-//            Assertions.assertEquals(secondName, ascResults.getArtifacts().get(1).getName());
-//            Assertions.assertNull(ascResults.getArtifacts().get(2).getName());
-//
-//            //Execution
-//            ArtifactSearchResults descResults = clientV2.searchArtifacts(groupId, "Testorder", null, null, null, SortBy.name, SortOrder.desc, 0, 10);
-//
-//            //Assertions
-//            Assertions.assertNotNull(descResults);
-//            Assertions.assertEquals(3, descResults.getCount());
-//            Assertions.assertEquals(3, descResults.getArtifacts().size());
-//            Assertions.assertNull(descResults.getArtifacts().get(0).getName());
-//            Assertions.assertEquals(secondName, descResults.getArtifacts().get(1).getName());
-//            Assertions.assertEquals(firstName, descResults.getArtifacts().get(2).getName());
-//
-//        } finally {
-//            clientV2.deleteArtifact(groupId, firstArtifactId);
-//            clientV2.deleteArtifact(groupId, secondArtifactId);
-//            clientV2.deleteArtifact(groupId, thirdArtifactId);
-//        }
-//    }
-//
-//    @Test
-//    public void getLatestArtifact() throws Exception {
-//        //Preparation
-//        final String groupId = "getLatestArtifact";
-//        final String artifactId = generateArtifactId();
-//
-//        createArtifact(groupId, artifactId);
-//
-//        //Execution
-//        InputStream amd = clientV2.getLatestArtifact(groupId, artifactId);
-//
-//        //Assertions
-//        assertNotNull(amd);
-//        assertEquals(ARTIFACT_CONTENT, IoUtil.toString(amd));
-//    }
-//
-//    @Test
-//    public void getContentById() throws Exception {
-//        //Preparation
-//        final String groupId = "getContentById";
-//        final String artifactId = generateArtifactId();
-//
-//        ArtifactMetaData amd = createArtifact(groupId, artifactId);
-//        assertNotNull(amd.getContentId());
-//
-//        //Execution
-//        InputStream content = clientV2.getContentById(amd.getContentId());
-//
-//        //Assertions
-//        assertNotNull(content);
-//        assertEquals(ARTIFACT_CONTENT, IOUtils.toString(content, StandardCharsets.UTF_8));
-//    }
-//
-//    @Test
-//    public void testArtifactNotFound() {
-//        Assertions.assertThrows(ArtifactNotFoundException.class, () -> clientV2.getArtifactMetaData(UUID.randomUUID().toString(), UUID.randomUUID().toString()));
-//    }
-//
-//    @Test
-//    public void getArtifactVersionMetadataByContent() throws Exception {
-//        //Preparation
-//        final String groupId = "getArtifactVersionMetadataByContent";
-//        final String artifactId = generateArtifactId();
-//
-//        createArtifact(groupId, artifactId);
-//
-//        //Execution
-//        final VersionMetaData versionMetaData = clientV2.getArtifactVersionMetaDataByContent(groupId, artifactId, IoUtil.toStream(ARTIFACT_CONTENT));
-//        assertNotNull(versionMetaData);
-//
-//        //Create a second artifact using the same content but with a reference, since this version has references, a new artifact version must be created.
-//        var secondArtifactId = generateArtifactId();
-//        var artifactReference = new ArtifactReference();
-//
-//        artifactReference.setName("testReference");
-//        artifactReference.setArtifactId(artifactId);
-//        artifactReference.setGroupId(groupId);
-//        artifactReference.setVersion("1");
-//
-//        var artifactReferences = List.of(artifactReference);
-//
-//        createArtifactWithReferences(groupId, secondArtifactId, artifactReferences);
-//
-//        ArtifactContent artifactContent = new ArtifactContent();
-//        artifactContent.setContent(ARTIFACT_CONTENT);
-//        artifactContent.setReferences(artifactReferences);
-//
-//        final VersionMetaData secondVersionMetadata = clientV2.getArtifactVersionMetaDataByContent(groupId, secondArtifactId, artifactContent);
-//
-//        assertNotEquals(secondVersionMetadata.getContentId(), versionMetaData.getContentId());
-//    }
-//
-//
-//    @Test
-//    public void getContentByHash() throws Exception {
-//        //Preparation
-//        final String groupId = "getContentByHash";
-//        final String artifactId = generateArtifactId();
-//
-//        String contentHash = DigestUtils.sha256Hex(ARTIFACT_CONTENT);
-//
-//        createArtifact(groupId, artifactId);
-//
-//        //Execution
-//        InputStream content = clientV2.getContentByHash(contentHash);
-//        assertNotNull(content);
-//
-//        //Assertions
-//        String artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
-//        assertEquals(ARTIFACT_CONTENT, artifactContent);
-//
-//
-//        //Create a second artifact using the same content but with a reference, the hash must be different but it should work.
-//        var secondArtifactId = generateArtifactId();
-//        var artifactReference = new ArtifactReference();
-//
-//        artifactReference.setName("testReference");
-//        artifactReference.setArtifactId(artifactId);
-//        artifactReference.setGroupId(groupId);
-//        artifactReference.setVersion("1");
-//
-//        var artifactReferences = List.of(artifactReference);
-//
-//        createArtifactWithReferences(groupId, secondArtifactId, artifactReferences);
-//
-//        String referencesSerialized = SqlUtil.serializeReferences(toReferenceDtos(artifactReferences));
-//
-//        contentHash = DigestUtils.sha256Hex(concatContentAndReferences(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8), referencesSerialized));
-//
-//        //Execution
-//        content = clientV2.getContentByHash(contentHash);
-//        assertNotNull(content);
-//
-//        //Assertions
-//        artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
-//        assertEquals(ARTIFACT_CONTENT, artifactContent);
-//    }
-//
-//    @Test
-//    public void getContentByGlobalId() throws Exception {
-//        //Preparation
-//        final String groupId = "getContentByGlobalId";
-//        final String artifactId = generateArtifactId();
-//
-//        ArtifactMetaData amd = createArtifact(groupId, artifactId);
-//
-//        //Execution
-//        TestUtils.retry(() -> {
-//            InputStream content = clientV2.getContentByGlobalId(amd.getGlobalId());
-//            assertNotNull(content);
-//
-//            //Assertions
-//            String artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
-//            assertEquals(ARTIFACT_CONTENT, artifactContent);
-//        });
-//
-//
-//    }
-//
-//    @Test
-//    public void getArtifactVersionMetaDataByContent() throws Exception {
-//        //Preparation
-//        final String groupId = "getArtifactVersionMetaDataByContent";
-//        final String artifactId = generateArtifactId();
-//
-//        //Create first artifact, without references
-//        final ArtifactMetaData amd = createArtifact(groupId, artifactId);
-//        //Execution
-//        final VersionMetaData vmd = clientV2.getArtifactVersionMetaDataByContent(groupId, artifactId, IoUtil.toStream(ARTIFACT_CONTENT.getBytes()));
-//
-//        //Assertions
-//        assertEquals(amd.getGlobalId(), vmd.getGlobalId());
-//        assertEquals(amd.getId(), vmd.getId());
-//        assertEquals(amd.getContentId(), vmd.getContentId());
-//    }
-//
+
+    @Test
+    void nameOrderingTest() throws Exception {
+        //Preparation
+        final String groupId = "nameOrderingTest";
+        final String firstArtifactId = generateArtifactId();
+        final String secondArtifactId = generateArtifactId();
+        final String thirdArtifactId = "cccTestorder";
+
+        try {
+            clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+            // Create artifact 1
+            String firstName = "aaaTestorder" + ThreadLocalRandom.current().nextInt(1000000);
+            String artifactData = "{\"type\":\"record\",\"title\":\"" + firstName + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+            ArtifactContent content = new ArtifactContent();
+            content.setContent(artifactData);
+            clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", firstArtifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+            // Create artifact 2
+            String secondName = "bbbTestorder" + ThreadLocalRandom.current().nextInt(1000000);
+            String secondData = "{\"type\":\"record\",\"title\":\"" + secondName + "\",\"fields\":[{\"name\":\"foo\",\"type\":\"string\"}]}";
+
+            content.setContent(secondData);
+            clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", secondArtifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+            // Create artifact 3
+            String thirdData = "{\"openapi\":\"3.0.2\",\"info\":{\"description\":\"testorder\"}}";
+
+            content.setContent(thirdData);
+            clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", thirdArtifactId);
+                config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+                config.headers.add("Content-Type", "application/create.extended+json");
+            }).get(3, TimeUnit.SECONDS);
+
+            retry(() -> {
+                ArtifactMetaData artifactMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(thirdArtifactId).meta().get().get(3, TimeUnit.SECONDS);
+                Assertions.assertNotNull(artifactMetaData);
+                Assertions.assertEquals("testorder", artifactMetaData.getDescription());
+            });
+
+            //Execution
+            ArtifactSearchResults ascResults = clientV2.search().artifacts().get(config -> {
+                config.queryParameters.offset = 0;
+                config.queryParameters.limit = 10;
+                config.queryParameters.name = "Testorder";
+                config.queryParameters.group = groupId;
+                config.queryParameters.orderby = "name";
+                config.queryParameters.order = "asc";
+            }).get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            Assertions.assertNotNull(ascResults);
+            Assertions.assertEquals(3, ascResults.getCount());
+            Assertions.assertEquals(3, ascResults.getArtifacts().size());
+            Assertions.assertEquals(firstName, ascResults.getArtifacts().get(0).getName());
+            Assertions.assertEquals(secondName, ascResults.getArtifacts().get(1).getName());
+            Assertions.assertNull(ascResults.getArtifacts().get(2).getName());
+
+            //Execution
+            ArtifactSearchResults descResults = clientV2.search().artifacts().get(config -> {
+                config.queryParameters.offset = 0;
+                config.queryParameters.limit = 10;
+                config.queryParameters.name = "Testorder";
+                config.queryParameters.group = groupId;
+                config.queryParameters.orderby = "name";
+                config.queryParameters.order = "desc";
+            }).get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            Assertions.assertNotNull(descResults);
+            Assertions.assertEquals(3, descResults.getCount());
+            Assertions.assertEquals(3, descResults.getArtifacts().size());
+            Assertions.assertNull(descResults.getArtifacts().get(0).getName());
+            Assertions.assertEquals(secondName, descResults.getArtifacts().get(1).getName());
+            Assertions.assertEquals(firstName, descResults.getArtifacts().get(2).getName());
+
+        } finally {
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(firstArtifactId).delete().get(3, TimeUnit.SECONDS);
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(secondArtifactId).delete().get(3, TimeUnit.SECONDS);
+            clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(thirdArtifactId).delete().get(3, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void getLatestArtifact() throws Exception {
+        //Preparation
+        final String groupId = "getLatestArtifact";
+        final String artifactId = generateArtifactId();
+
+        createArtifact(groupId, artifactId);
+
+        //Execution
+        InputStream amd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(amd);
+        assertEquals(ARTIFACT_CONTENT, IoUtil.toString(amd));
+    }
+
+    @Test
+    public void getContentById() throws Exception {
+        //Preparation
+        final String groupId = "getContentById";
+        final String artifactId = generateArtifactId();
+
+        ArtifactMetaData amd = createArtifact(groupId, artifactId);
+        assertNotNull(amd.getContentId());
+
+        //Execution
+        InputStream content = clientV2.ids().contentIds().byContentId(amd.getContentId()).get().get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(content);
+        assertEquals(ARTIFACT_CONTENT, IOUtils.toString(content, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testArtifactNotFound() {
+        var executionException = Assertions.assertThrows(ExecutionException.class, () -> clientV2.groups().byGroupId(UUID.randomUUID().toString()).artifacts().byArtifactId(UUID.randomUUID().toString()).meta().get().get(3, TimeUnit.SECONDS));
+        Assertions.assertNotNull(executionException.getCause());
+        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException.getCause().getClass());
+        Assertions.assertEquals(404, ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getErrorCode());
+        Assertions.assertEquals("ArtifactNotFoundException", ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getName());
+    }
+
+    @Test
+    public void getArtifactVersionMetadataByContent() throws Exception {
+        //Preparation
+        final String groupId = "getArtifactVersionMetadataByContent";
+        final String artifactId = generateArtifactId();
+
+        createArtifact(groupId, artifactId);
+
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+        final VersionMetaData versionMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().post(content).get(3, TimeUnit.SECONDS);
+
+        assertNotNull(versionMetaData);
+
+        //Create a second artifact using the same content but with a reference, since this version has references, a new artifact version must be created.
+        var secondArtifactId = generateArtifactId();
+        var artifactReference = new ArtifactReference();
+
+        artifactReference.setName("testReference");
+        artifactReference.setArtifactId(artifactId);
+        artifactReference.setGroupId(groupId);
+        artifactReference.setVersion("1");
+
+        var artifactReferences = List.of(artifactReference);
+
+        createArtifactWithReferences(groupId, secondArtifactId, artifactReferences);
+
+        ArtifactContent artifactContent = new ArtifactContent();
+        artifactContent.setContent(ARTIFACT_CONTENT);
+        artifactContent.setReferences(artifactReferences);
+
+        final VersionMetaData secondVersionMetadata = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(secondArtifactId).meta().post(artifactContent).get(3, TimeUnit.SECONDS);
+
+        assertNotEquals(secondVersionMetadata.getContentId(), versionMetaData.getContentId());
+    }
+
+    @Test
+    public void getContentByHash() throws Exception {
+        //Preparation
+        final String groupId = "getContentByHash";
+        final String artifactId = generateArtifactId();
+
+        String contentHash = DigestUtils.sha256Hex(ARTIFACT_CONTENT);
+
+        createArtifact(groupId, artifactId);
+
+        //Execution
+        InputStream content = clientV2.ids().contentHashes().byContentHash(contentHash).get().get(3, TimeUnit.SECONDS);
+        assertNotNull(content);
+
+        //Assertions
+        String artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
+        assertEquals(ARTIFACT_CONTENT, artifactContent);
+
+
+        //Create a second artifact using the same content but with a reference, the hash must be different but it should work.
+        var secondArtifactId = generateArtifactId();
+        var artifactReference = new ArtifactReference();
+
+        artifactReference.setName("testReference");
+        artifactReference.setArtifactId(artifactId);
+        artifactReference.setGroupId(groupId);
+        artifactReference.setVersion("1");
+
+        var artifactReferences = List.of(artifactReference);
+
+        createArtifactWithReferences(groupId, secondArtifactId, artifactReferences);
+
+        String referencesSerialized = SqlUtil.serializeReferences(toReferenceDtos(artifactReferences.stream().map(r -> {
+            var ref = new io.apicurio.registry.rest.v2.beans.ArtifactReference();
+            ref.setArtifactId(r.getArtifactId());
+            ref.setGroupId(r.getGroupId());
+            ref.setName(r.getName());
+            ref.setVersion(r.getVersion());
+            return ref;
+        }).collect(Collectors.toList())));
+
+        contentHash = DigestUtils.sha256Hex(concatContentAndReferences(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8), referencesSerialized));
+
+        //Execution
+        content = clientV2.ids().contentHashes().byContentHash(contentHash).get().get(3, TimeUnit.SECONDS);
+        assertNotNull(content);
+
+        //Assertions
+        artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
+        assertEquals(ARTIFACT_CONTENT, artifactContent);
+    }
+
+    @Test
+    public void getContentByGlobalId() throws Exception {
+        //Preparation
+        final String groupId = "getContentByGlobalId";
+        final String artifactId = generateArtifactId();
+
+        ArtifactMetaData amd = createArtifact(groupId, artifactId);
+
+        //Execution
+        TestUtils.retry(() -> {
+            InputStream content = clientV2.ids().globalIds().byGlobalId(amd.getGlobalId()).get().get(3, TimeUnit.SECONDS);
+            assertNotNull(content);
+
+            //Assertions
+            String artifactContent = IOUtils.toString(content, StandardCharsets.UTF_8);
+            assertEquals(ARTIFACT_CONTENT, artifactContent);
+        });
+    }
+
+    @Test
+    public void getArtifactVersionMetaDataByContent() throws Exception {
+        //Preparation
+        final String groupId = "getArtifactVersionMetaDataByContent";
+        final String artifactId = generateArtifactId();
+
+        //Create first artifact, without references
+        final ArtifactMetaData amd = createArtifact(groupId, artifactId);
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+        final VersionMetaData vmd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().post(content).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertEquals(amd.getGlobalId(), vmd.getGlobalId());
+        assertEquals(amd.getId(), vmd.getId());
+        assertEquals(amd.getContentId(), vmd.getContentId());
+    }
+
 //    @Test
 //    public void listArtifactRules() throws Exception {
 //        //Preparation
@@ -1414,15 +1453,24 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         }).get(3, TimeUnit.SECONDS);
         return checkArtifact(groupId, artifactId, created);
     }
-//
-//    private ArtifactMetaData createArtifactWithReferences(String groupId, String artifactId, List<ArtifactReference> artifactReferences) throws Exception {
-//        final InputStream stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
+
+    private ArtifactMetaData createArtifactWithReferences(String groupId, String artifactId, List<ArtifactReference> artifactReferences) throws Exception {
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+        content.setReferences(artifactReferences);
+        final ArtifactMetaData created = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.queryParameters.canonical = false;
+            config.queryParameters.ifExists = "FAIL";
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.JSON);
+            config.headers.add("X-Registry-Name", artifactId);
+        }).get(3, TimeUnit.SECONDS);
 //        final ArtifactMetaData created = clientV2.createArtifact(groupId, artifactId, null,
 //                ArtifactType.JSON, IfExists.FAIL, false, null, null, ContentTypes.APPLICATION_CREATE_EXTENDED, null, null, stream, artifactReferences);
-//
-//        return checkArtifact(groupId, artifactId, created);
-//    }
-//
+
+        return checkArtifact(groupId, artifactId, created);
+    }
+
     @NotNull
     private ArtifactMetaData checkArtifact(String groupId, String artifactId, ArtifactMetaData created) throws Exception {
         assertNotNull(created);
