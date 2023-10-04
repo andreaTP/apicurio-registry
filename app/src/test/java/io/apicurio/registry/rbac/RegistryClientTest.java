@@ -1096,219 +1096,239 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         assertEquals(amd.getContentId(), vmd.getContentId());
     }
 
-//    @Test
-//    public void listArtifactRules() throws Exception {
-//        //Preparation
-//        final String groupId = "listArtifactRules";
-//        final String artifactId = generateArtifactId();
-//
-//        createArtifact(groupId, artifactId);
-//
-//        TestUtils.retry(() -> {
-//            final List<RuleType> emptyRules = clientV2.listArtifactRules(groupId, artifactId);
-//
-//            //Assertions
-//            assertNotNull(emptyRules);
-//            assertTrue(emptyRules.isEmpty());
-//        });
-//
-//        //Execution
-//        createArtifactRule(groupId, artifactId, RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            final List<RuleType> ruleTypes = clientV2.listArtifactRules(groupId, artifactId);
-//
-//            //Assertions
-//            assertNotNull(ruleTypes);
-//            assertFalse(ruleTypes.isEmpty());
-//        });
-//    }
-//
-//    @Test
-//    public void testCompatibilityWithReferences() throws Exception {
-//        //Preparation
-//        final String groupId = "testCompatibilityWithReferences";
-//        final String artifactId = generateArtifactId();
-//
-//        //First create the references schema
-//        createArtifact(groupId, artifactId, ArtifactType.AVRO, REFERENCED_SCHEMA);
-//
-//        ArtifactReference artifactReference = new ArtifactReference();
-//        artifactReference.setArtifactId(artifactId);
-//        artifactReference.setGroupId(groupId);
-//        artifactReference.setVersion("1");
-//        artifactReference.setName("com.example.common.ItemId");
-//
-//        final String secondArtifactId = generateArtifactId();
-//        createArtifactWithReferences(groupId, secondArtifactId, ArtifactType.AVRO, SCHEMA_WITH_REFERENCE, List.of(artifactReference));
-//
-//        //Create rule
-//        createArtifactRule(groupId, secondArtifactId, RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        updateArtifactWithReferences(groupId, secondArtifactId, ArtifactType.AVRO, SCHEMA_WITH_REFERENCE, List.of(artifactReference));
-//
-//        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
-//        clientV2.deleteArtifact(groupId, secondArtifactId);
-//    }
-//
-//    @Test
-//    public void deleteArtifactRules() throws Exception {
-//        //Preparation
-//        final String groupId = "deleteArtifactRules";
-//        final String artifactId = generateArtifactId();
-//
-//        prepareRuleTest(groupId, artifactId, RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        //Execution
-//        clientV2.deleteArtifactRules(groupId, artifactId);
-//
-//        //Assertions
-//        TestUtils.retry(() -> {
-//            final List<RuleType> emptyRules = clientV2.listArtifactRules(groupId, artifactId);
-//            assertNotNull(emptyRules);
-//            assertTrue(emptyRules.isEmpty());
-//        });
-//    }
-//
-//    @Test
-//    public void getArtifactRuleConfig() throws Exception {
-//        //Preparation
-//        final String groupId = "getArtifactRuleConfig";
-//        final String artifactId = generateArtifactId();
-//
-//        prepareRuleTest(groupId, artifactId, RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            //Execution
-//            final Rule rule = clientV2.getArtifactRuleConfig(groupId, artifactId, RuleType.COMPATIBILITY);
-//            //Assertions
-//            assertNotNull(rule);
-//            assertEquals("BACKWARD", rule.getConfig());
-//        });
-//    }
-//
-//    @Test
-//    public void updateArtifactRuleConfig() throws Exception {
-//        //Preparation
-//        final String groupId = "updateArtifactRuleConfig";
-//        final String artifactId = generateArtifactId();
-//
-//        prepareRuleTest(groupId, artifactId, RuleType.COMPATIBILITY, "BACKWARD");
-//
-//        TestUtils.retry(() -> {
-//            final Rule rule = clientV2.getArtifactRuleConfig(groupId, artifactId, RuleType.COMPATIBILITY);
-//            assertNotNull(rule);
-//            assertEquals("BACKWARD", rule.getConfig());
-//        });
-//
-//        final Rule toUpdate = new Rule();
-//        toUpdate.setType(RuleType.COMPATIBILITY);
-//        toUpdate.setConfig("FULL");
-//
-//        //Execution
-//        final Rule updated = clientV2.updateArtifactRuleConfig(groupId, artifactId, RuleType.COMPATIBILITY, toUpdate);
-//
-//        //Assertions
-//        assertNotNull(updated);
-//        assertEquals("FULL", updated.getConfig());
-//    }
-//
-//    @Test
-//    public void testUpdateArtifact() throws Exception {
-//
-//        //Preparation
-//        final String groupId = "testUpdateArtifact";
-//        final String artifactId = generateArtifactId();
-//
-//        createArtifact(groupId, artifactId);
-//        final String updatedContent = "{\"name\":\"ibm\"}";
-//        final String version = "3";
-//        final String name = "testUpdateArtifactName";
-//        final String description = "testUpdateArtifactDescription";
-//
-//        final InputStream stream = IoUtil.toStream(updatedContent.getBytes(StandardCharsets.UTF_8));
-//        //Execution
-//        clientV2.updateArtifact(groupId, artifactId, version, name, description, stream);
-//
-//        //Assertions
-//        assertEquals(updatedContent, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//
-//        ArtifactMetaData artifactMetaData = clientV2.getArtifactMetaData(groupId, artifactId);
-//        assertNotNull(artifactMetaData);
-//        assertEquals(version, artifactMetaData.getVersion());
-//        assertEquals(name, artifactMetaData.getName());
-//        assertEquals(description, artifactMetaData.getDescription());
-//    }
-//
-//    @Test
-//    public void testUpdateYamlArtifact() throws Exception {
-//
-//        //Preparation
-//        final String groupId = "testUpdateYamlArtifact";
-//        final String artifactId = generateArtifactId();
-//
-//        createOpenAPIArtifact(groupId, artifactId); // Create first version of the openapi artifact using json
-//        final String version = "3";
-//        final String name = "testUpdateYamlArtifactName";
-//        final String description = "testUpdateYamlArtifactDescription";
-//
-//        final InputStream stream = IoUtil.toStream(UPDATED_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        //Execution
-//        clientV2.updateArtifact(groupId, artifactId, version, name, description, ContentTypes.APPLICATION_YAML, stream);
-//
-//        //Assertions
-//        assertMultilineTextEquals(UPDATED_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.getLatestArtifact(groupId, artifactId)));
-//
-//        ArtifactMetaData artifactMetaData = clientV2.getArtifactMetaData(groupId, artifactId);
-//        assertNotNull(artifactMetaData);
-//        assertEquals(version, artifactMetaData.getVersion());
-//        assertEquals(name, artifactMetaData.getName());
-//        assertEquals(description, artifactMetaData.getDescription());
-//    }
-//
-//    @Test
-//    public void deleteArtifactsInGroup() throws Exception {
-//        //Preparation
-//        final String groupId = "deleteArtifactsInGroup";
-//        final String firstArtifactId = generateArtifactId();
-//        final String secondArtifactId = generateArtifactId();
-//        createArtifact(groupId, firstArtifactId);
-//        createArtifact(groupId, secondArtifactId);
-//
-//        final ArtifactSearchResults searchResults = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
-//        assertFalse(searchResults.getArtifacts().isEmpty());
-//        assertEquals(2, (int) searchResults.getCount());
-//
-//        //Execution
-//        clientV2.deleteArtifactsInGroup(groupId);
-//
-//        TestUtils.retry(() -> {
-//            final ArtifactSearchResults deleted = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
-//
-//            //Assertions
-//            assertTrue(deleted.getArtifacts().isEmpty());
-//            assertEquals(0, (int) deleted.getCount());
-//        });
-//    }
-//
-//    @Test
-//    public void searchArtifactsByContent() throws Exception {
-//        //Preparation
-//        final String groupId = "searchArtifactsByContent";
-//        final String firstArtifactId = generateArtifactId();
-//        final String secondArtifactId = generateArtifactId();
-//
-//        String content = "{\"name\":\"" + TestUtils.generateSubject() + "\"}";
-//        createArtifact(groupId, firstArtifactId, "AVRO", content);
-//        createArtifact(groupId, secondArtifactId, "AVRO", content);
-//
-//        //Execution
-//        final ArtifactSearchResults searchResults = clientV2.searchArtifactsByContent(IoUtil.toStream(content), null, null, null, null);
-//
-//        //Assertions
-//        assertEquals(2, searchResults.getCount());
-//    }
-//
+    @Test
+    public void listArtifactRules() throws Exception {
+        //Preparation
+        final String groupId = "listArtifactRules";
+        final String artifactId = generateArtifactId();
+
+        createArtifact(groupId, artifactId);
+
+        TestUtils.retry(() -> {
+            final List<RuleType> emptyRules = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().get().get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            assertNotNull(emptyRules);
+            assertTrue(emptyRules.isEmpty());
+        });
+
+        //Execution
+        createArtifactRule(groupId, artifactId, io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            final List<RuleType> ruleTypes = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().get().get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            assertNotNull(ruleTypes);
+            assertFalse(ruleTypes.isEmpty());
+        });
+    }
+
+    @Test
+    public void testCompatibilityWithReferences() throws Exception {
+        //Preparation
+        final String groupId = "testCompatibilityWithReferences";
+        final String artifactId = generateArtifactId();
+
+        //First create the references schema
+        createArtifact(groupId, artifactId, ArtifactType.AVRO, REFERENCED_SCHEMA);
+
+        io.apicurio.registry.rest.v2.beans.ArtifactReference artifactReference = new io.apicurio.registry.rest.v2.beans.ArtifactReference();
+        artifactReference.setArtifactId(artifactId);
+        artifactReference.setGroupId(groupId);
+        artifactReference.setVersion("1");
+        artifactReference.setName("com.example.common.ItemId");
+
+        final String secondArtifactId = generateArtifactId();
+        createArtifactWithReferences(groupId, secondArtifactId, ArtifactType.AVRO, SCHEMA_WITH_REFERENCE, List.of(artifactReference));
+
+        //Create rule
+        createArtifactRule(groupId, secondArtifactId, io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        updateArtifactWithReferences(groupId, secondArtifactId, ArtifactType.AVRO, SCHEMA_WITH_REFERENCE, List.of(artifactReference));
+
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).delete().get(3, TimeUnit.SECONDS);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(secondArtifactId).delete().get(3, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void deleteArtifactRules() throws Exception {
+        //Preparation
+        final String groupId = "deleteArtifactRules";
+        final String artifactId = generateArtifactId();
+
+        prepareRuleTest(groupId, artifactId, io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        //Execution
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().delete().get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        TestUtils.retry(() -> {
+            final List<RuleType> emptyRules = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().get().get(3, TimeUnit.SECONDS);
+            assertNotNull(emptyRules);
+            assertTrue(emptyRules.isEmpty());
+        });
+    }
+
+    @Test
+    public void getArtifactRuleConfig() throws Exception {
+        //Preparation
+        final String groupId = "getArtifactRuleConfig";
+        final String artifactId = generateArtifactId();
+
+        prepareRuleTest(groupId, artifactId, io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            //Execution
+            final Rule rule = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().byRule(RuleType.COMPATIBILITY.name()).get().get(3, TimeUnit.SECONDS);
+            //Assertions
+            assertNotNull(rule);
+            assertEquals("BACKWARD", rule.getConfig());
+        });
+    }
+
+    @Test
+    public void updateArtifactRuleConfig() throws Exception {
+        //Preparation
+        final String groupId = "updateArtifactRuleConfig";
+        final String artifactId = generateArtifactId();
+
+        prepareRuleTest(groupId, artifactId, io.apicurio.registry.types.RuleType.COMPATIBILITY, "BACKWARD");
+
+        TestUtils.retry(() -> {
+            final Rule rule = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().byRule(RuleType.COMPATIBILITY.name()).get().get(3, TimeUnit.SECONDS);
+            assertNotNull(rule);
+            assertEquals("BACKWARD", rule.getConfig());
+        });
+
+        final Rule toUpdate = new Rule();
+        toUpdate.setType(RuleType.COMPATIBILITY);
+        toUpdate.setConfig("FULL");
+
+        //Execution
+        final Rule updated = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).rules().byRule(RuleType.COMPATIBILITY.name()).put(toUpdate).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotNull(updated);
+        assertEquals("FULL", updated.getConfig());
+    }
+
+    @Test
+    public void testUpdateArtifact() throws Exception {
+
+        //Preparation
+        final String groupId = "testUpdateArtifact";
+        final String artifactId = generateArtifactId();
+
+        createArtifact(groupId, artifactId);
+        final String updatedContent = "{\"name\":\"ibm\"}";
+        final String version = "3";
+        final String name = "testUpdateArtifactName";
+        final String description = "testUpdateArtifactDescription";
+
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(updatedContent);
+        clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).put(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+            config.headers.add("X-Registry-Version", version);
+            config.headers.add("Content-Type", "application/create.extended+json");
+        }).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertEquals(updatedContent, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+
+        ArtifactMetaData artifactMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+        assertNotNull(artifactMetaData);
+        assertEquals(version, artifactMetaData.getVersion());
+        assertEquals(name, artifactMetaData.getName());
+        assertEquals(description, artifactMetaData.getDescription());
+    }
+
+    @Test
+    public void testUpdateYamlArtifact() throws Exception {
+
+        //Preparation
+        final String groupId = "testUpdateYamlArtifact";
+        final String artifactId = generateArtifactId();
+
+        createOpenAPIArtifact(groupId, artifactId); // Create first version of the openapi artifact using json
+        final String version = "3";
+        final String name = "testUpdateYamlArtifactName";
+        final String description = "testUpdateYamlArtifactDescription";
+
+        final InputStream stream = IoUtil.toStream(UPDATED_OPENAPI_YAML_CONTENT.getBytes(StandardCharsets.UTF_8));
+        //Execution
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(UPDATED_OPENAPI_YAML_CONTENT);
+        var request = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).toPutRequestInformation(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.OPENAPI);
+            config.headers.add("X-Registry-Name", name);
+            config.headers.add("X-Registry-Description", description);
+            config.headers.add("X-Registry-Version", version);
+        });
+        // HACK to set the correct body content
+        request.setStreamContent(new ByteArrayInputStream(UPDATED_OPENAPI_YAML_CONTENT.getBytes()));
+        // HACK to set the correct header
+        request.headers.replace("Content-Type", Set.of(ContentTypes.APPLICATION_YAML));
+        anonymousAdapter.sendAsync(request, ArtifactMetaData::createFromDiscriminatorValue, new HashMap<>()).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertMultilineTextEquals(UPDATED_OPENAPI_JSON_CONTENT, IoUtil.toString(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS)));
+
+        ArtifactMetaData artifactMetaData = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+        assertNotNull(artifactMetaData);
+        assertEquals(version, artifactMetaData.getVersion());
+        assertEquals(name, artifactMetaData.getName());
+        assertEquals(description, artifactMetaData.getDescription());
+    }
+
+    @Test
+    public void deleteArtifactsInGroup() throws Exception {
+        //Preparation
+        final String groupId = "deleteArtifactsInGroup";
+        final String firstArtifactId = generateArtifactId();
+        final String secondArtifactId = generateArtifactId();
+        createArtifact(groupId, firstArtifactId);
+        createArtifact(groupId, secondArtifactId);
+
+        final ArtifactSearchResults searchResults = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+        assertFalse(searchResults.getArtifacts().isEmpty());
+        assertEquals(2, (int) searchResults.getCount());
+
+        //Execution
+        clientV2.groups().byGroupId(groupId).artifacts().delete().get(3, TimeUnit.SECONDS);
+
+        TestUtils.retry(() -> {
+            final ArtifactSearchResults deleted = clientV2.groups().byGroupId(groupId).artifacts().get().get(3, TimeUnit.SECONDS);
+
+            //Assertions
+            assertTrue(deleted.getArtifacts().isEmpty());
+            assertEquals(0, (int) deleted.getCount());
+        });
+    }
+
+    @Test
+    public void searchArtifactsByContent() throws Exception {
+        //Preparation
+        final String groupId = "searchArtifactsByContent";
+        final String firstArtifactId = generateArtifactId();
+        final String secondArtifactId = generateArtifactId();
+
+        String content = "{\"name\":\"" + TestUtils.generateSubject() + "\"}";
+        createArtifact(groupId, firstArtifactId, "AVRO", content);
+        createArtifact(groupId, secondArtifactId, "AVRO", content);
+
+        //Execution
+        final ArtifactSearchResults searchResults = clientV2.search().artifacts().post(IoUtil.toStream(content)).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertEquals(2, searchResults.getCount());
+    }
+
 //    @Test
 //    public void smokeGlobalRules() throws Exception {
 //        createGlobalRule(RuleType.COMPATIBILITY, "BACKWARD");
@@ -1505,10 +1525,10 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //        return checkArtifact(groupId, artifactId, created);
 //    }
 
-//    private void prepareRuleTest(String groupId, String artifactId, RuleType ruleType, String ruleConfig) throws Exception {
-//        createArtifact(groupId, artifactId);
-//        createArtifactRule(groupId, artifactId, ruleType, ruleConfig);
-//    }
+    private void prepareRuleTest(String groupId, String artifactId, io.apicurio.registry.types.RuleType ruleType, String ruleConfig) throws Exception {
+        createArtifact(groupId, artifactId);
+        createArtifactRule(groupId, artifactId, ruleType, ruleConfig);
+    }
 
 //    @Test
 //    void headersCustomizationTest() throws Exception {
