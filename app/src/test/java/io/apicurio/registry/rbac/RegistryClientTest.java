@@ -17,6 +17,8 @@
 package io.apicurio.registry.rbac;
 
 import com.microsoft.kiota.ApiException;
+import com.microsoft.kiota.authentication.AnonymousAuthenticationProvider;
+import com.microsoft.kiota.http.OkHttpRequestAdapter;
 import io.apicurio.registry.AbstractRegistryTestBase;
 import io.apicurio.registry.AbstractResourceTestBase;
 import io.apicurio.registry.rest.client.models.*;
@@ -27,6 +29,7 @@ import io.apicurio.registry.utils.IoUtil;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.apicurio.registry.utils.tests.ApplicationRbacEnabledProfile;
 import io.apicurio.registry.utils.tests.TestUtils;
+import io.apicurio.registry.utils.tests.TooManyRequestsMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -1743,30 +1746,37 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 
     }
 
-// TODO: verify how to port this test, I think that retries are happening behind the scenes, but not sure
-//    @Test
-//    public void testClientRateLimitError() {
-//        TooManyRequestsMock mock = new TooManyRequestsMock();
-//        mock.start();
-//        try {
-//            var adapter = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
-//            adapter.setBaseUrl(mock.getMockUrl());
-//            RegistryClient client = new RegistryClient(adapter);
-//
-//            var executionException1 = Assertions.assertThrows(ExecutionException.class, () -> client.groups().byGroupId("test").artifacts().byArtifactId("test").get().get(3, TimeUnit.SECONDS));
-//            Assertions.assertNotNull(executionException1.getCause());
-//            Assertions.assertEquals(ApiException.class, executionException1.getCause().getClass());
-//            Assertions.assertEquals(429, ((ApiException)executionException1.getCause()).responseStatusCode);
-//
-//            Assertions.assertThrows(RateLimitedClientException.class, () -> client.getLatestArtifact("test", "test"));
-//
-//            Assertions.assertThrows(RateLimitedClientException.class, () -> client.createArtifact(null, "aaa", IoUtil.toStream("{}")));
-//
-//            Assertions.assertThrows(RateLimitedClientException.class, () -> client.getContentByGlobalId(5));
-//        } finally {
-//            mock.stop();
-//        }
-//    }
+    @Test
+    public void testClientRateLimitError() {
+        TooManyRequestsMock mock = new TooManyRequestsMock();
+        mock.start();
+        try {
+            var adapter = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
+            adapter.setBaseUrl(mock.getMockUrl());
+            io.apicurio.registry.rest.client.RegistryClient client = new io.apicurio.registry.rest.client.RegistryClient(adapter);
+
+            var executionException1 = Assertions.assertThrows(ExecutionException.class, () -> client.groups().byGroupId("test").artifacts().byArtifactId("test").get().get(30, TimeUnit.SECONDS));
+            Assertions.assertNotNull(executionException1.getCause());
+            Assertions.assertEquals(ApiException.class, executionException1.getCause().getClass());
+            Assertions.assertEquals(429, ((ApiException)executionException1.getCause()).responseStatusCode);
+
+            ArtifactContent content = new ArtifactContent();
+            content.setContent("{}");
+            var executionException2 = Assertions.assertThrows(ExecutionException.class, () -> client.groups().byGroupId("default").artifacts().post(content, config -> {
+                config.headers.add("X-Registry-ArtifactId", "aaa");
+            }).get(30, TimeUnit.SECONDS));
+            Assertions.assertNotNull(executionException2.getCause());
+            Assertions.assertEquals(ApiException.class, executionException2.getCause().getClass());
+            Assertions.assertEquals(429, ((ApiException)executionException2.getCause()).responseStatusCode);
+
+            var executionException3 = Assertions.assertThrows(ExecutionException.class, () -> client.ids().globalIds().byGlobalId(5L).get().get(30, TimeUnit.SECONDS));
+            Assertions.assertNotNull(executionException3.getCause());
+            Assertions.assertEquals(ApiException.class, executionException3.getCause().getClass());
+            Assertions.assertEquals(429, ((ApiException)executionException3.getCause()).responseStatusCode);
+        } finally {
+            mock.stop();
+        }
+    }
 
     @Test
     public void testGetArtifactVersionByContent_DuplicateContent() throws Exception {

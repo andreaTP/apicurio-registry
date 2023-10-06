@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import com.microsoft.kiota.ApiException;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
@@ -107,9 +108,8 @@ public class LimitsTest extends AbstractResourceTestBase {
                 .get(3, TimeUnit.SECONDS);
         });
         Assertions.assertNotNull(executionException1.getCause());
-        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException1.getCause().getClass());
-        Assertions.assertEquals("LimitExceededException", ((io.apicurio.registry.rest.client.models.Error)executionException1.getCause()).getName());
-        Assertions.assertEquals(409, ((io.apicurio.registry.rest.client.models.Error)executionException1.getCause()).getErrorCode());
+        Assertions.assertEquals(ApiException.class, executionException1.getCause().getClass());
+        Assertions.assertEquals(409, ((ApiException)executionException1.getCause()).responseStatusCode);
 
         //schema number 3 , exceeds the max number of schemas
         var executionException2 = Assertions.assertThrows(ExecutionException.class, () -> {
@@ -125,9 +125,8 @@ public class LimitsTest extends AbstractResourceTestBase {
                 }).get(3, TimeUnit.SECONDS);
         });
         Assertions.assertNotNull(executionException2.getCause());
-        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException2.getCause().getClass());
-        Assertions.assertEquals("LimitExceededException", ((io.apicurio.registry.rest.client.models.Error)executionException2.getCause()).getName());
-        Assertions.assertEquals(409, ((io.apicurio.registry.rest.client.models.Error)executionException2.getCause()).getErrorCode());
+        Assertions.assertEquals(ApiException.class, executionException2.getCause().getClass());
+        Assertions.assertEquals(409, ((ApiException)executionException2.getCause()).responseStatusCode);
     }
 
 }
