@@ -16,13 +16,10 @@
 
 package io.apicurio.registry.rbac;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.kiota.ApiException;
 import io.apicurio.registry.AbstractRegistryTestBase;
 import io.apicurio.registry.AbstractResourceTestBase;
-import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.models.*;
-import io.apicurio.registry.rest.client.models.Properties;
 import io.apicurio.registry.storage.impl.sql.SqlUtil;
 import io.apicurio.registry.types.ArtifactType;
 import io.apicurio.registry.types.ContentTypes;
@@ -30,7 +27,6 @@ import io.apicurio.registry.utils.IoUtil;
 import io.apicurio.registry.utils.tests.ApicurioTestTags;
 import io.apicurio.registry.utils.tests.ApplicationRbacEnabledProfile;
 import io.apicurio.registry.utils.tests.TestUtils;
-import io.apicurio.registry.utils.tests.TooManyRequestsMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -38,7 +34,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,7 +45,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -151,7 +145,7 @@ public class RegistryClientTest extends AbstractResourceTestBase {
         CreateGroupMetaData groupMetaData = new CreateGroupMetaData();
         groupMetaData.setId(groupId);
         groupMetaData.setDescription("Groups test crud");
-        Properties props = new Properties();
+        io.apicurio.registry.rest.client.models.Properties props = new io.apicurio.registry.rest.client.models.Properties();
         props.setAdditionalData(Map.of("p1", "v1", "p2", "v2"));
         groupMetaData.setProperties(props);
 
@@ -581,8 +575,6 @@ public class RegistryClientTest extends AbstractResourceTestBase {
             config.headers.add("X-Registry-ArtifactId", artifactId);
             config.headers.add("Content-Type", "application/create.extended+json");
         }).get(3, TimeUnit.SECONDS);
-//        clientV2.createArtifactVersion(groupId, artifactId, null, artifactData);
-
 
         //Execution
         VersionSearchResults results = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().get(config -> {
@@ -1552,176 +1544,219 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 
         // Try to add the rule again - should get a 409
         TestUtils.retry(() -> {
-            var executionException = Assertions.assertThrows(RoleMappingAlreadyExistsException.class, () -> {
-                clientV2.createRoleMapping(mapping);
+            var executionException = Assertions.assertThrows(ExecutionException.class, () -> {
+                clientV2.admin().roleMappings().post(mapping).get(3, TimeUnit.SECONDS);
             });
-            RoleMappingAlreadyExistsException
+            Assertions.assertNotNull(executionException.getCause());
+            Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
+            Assertions.assertEquals(409, ((ApiException)executionException.getCause()).responseStatusCode);
         });
-//
-//        // Add another mapping
-//        mapping.setPrincipalId("TestUser2");
-//        mapping.setRole(RoleType.ADMIN);
-//        clientV2.createRoleMapping(mapping);
-//
-//        // Get the list of mappings (should be 2 of them)
-//        TestUtils.retry(() -> {
-//            List<RoleMapping> mappings = clientV2.admin().roleMappings().get().get(3, TimeUnit.SECONDS);
-//            Assertions.assertEquals(2, mappings.size());
-//        });
-//
-//        // Get a single mapping by principal
-//        RoleMapping tu2Mapping = clientV2.admin().roleMappings().byPrincipalId("TestUser2").get().get(3, TimeUnit.SECONDS);
-//        Assertions.assertEquals("TestUser2", tu2Mapping.getPrincipalId());
-//        Assertions.assertEquals(RoleType.ADMIN, tu2Mapping.getRole());
-//
-//        // Update a mapping
-//        clientV2.updateRoleMapping("TestUser", RoleType.READ_ONLY);
-//
-//        // Get a single (updated) mapping
-//        TestUtils.retry(() -> {
-//            RoleMapping tum = clientV2.admin().roleMappings().byPrincipalId("TestUser").get().get(3, TimeUnit.SECONDS);
-//            Assertions.assertEquals("TestUser", tum.getPrincipalId());
-//            Assertions.assertEquals(RoleType.READ_ONLY, tum.getRole());
-//        });
-//
-//        // Try to update a role mapping that doesn't exist
-//        Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
-//            clientV2.updateRoleMapping("UnknownPrincipal", RoleType.ADMIN);
-//        });
-//
-//        // Delete a role mapping
-//        clientV2.deleteRoleMapping("TestUser2");
-//
-//        // Get the (deleted) mapping by name (should fail with a 404)
-//        TestUtils.retry(() -> {
-//            Assertions.assertThrows(RoleMappingNotFoundException.class, () -> {
-//                clientV2.getRoleMapping("TestUser2");
-//            });
-//        });
-//
-//        // Get the list of mappings (should be 1 of them)
-//        TestUtils.retry(() -> {
-//            List<RoleMapping> mappings = clientV2.admin().roleMappings().get().get(3, TimeUnit.SECONDS);
-//            Assertions.assertEquals(1, mappings.size());
-//            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
-//        });
-//
-//        // Clean up
-//        clientV2.deleteRoleMapping("TestUser");
+
+        // Add another mapping
+        mapping.setPrincipalId("TestUser2");
+        mapping.setRole(RoleType.ADMIN);
+        clientV2.admin().roleMappings().post(mapping).get(3, TimeUnit.SECONDS);
+
+        // Get the list of mappings (should be 2 of them)
+        TestUtils.retry(() -> {
+            List<RoleMapping> mappings = clientV2.admin().roleMappings().get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(2, mappings.size());
+        });
+
+        // Get a single mapping by principal
+        RoleMapping tu2Mapping = clientV2.admin().roleMappings().byPrincipalId("TestUser2").get().get(3, TimeUnit.SECONDS);
+        Assertions.assertEquals("TestUser2", tu2Mapping.getPrincipalId());
+        Assertions.assertEquals(RoleType.ADMIN, tu2Mapping.getRole());
+
+        // Update a mapping
+        UpdateRole updated = new UpdateRole();
+        updated.setRole(RoleType.READ_ONLY);
+        clientV2.admin().roleMappings().byPrincipalId("TestUser").put(updated).get(3, TimeUnit.SECONDS);
+
+        // Get a single (updated) mapping
+        TestUtils.retry(() -> {
+            RoleMapping tum = clientV2.admin().roleMappings().byPrincipalId("TestUser").get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals("TestUser", tum.getPrincipalId());
+            Assertions.assertEquals(RoleType.READ_ONLY, tum.getRole());
+        });
+
+        // Try to update a role mapping that doesn't exist
+        var executionException = Assertions.assertThrows(ExecutionException.class, () -> {
+            UpdateRole updated2 = new UpdateRole();
+            updated2.setRole(RoleType.ADMIN);
+            clientV2.admin().roleMappings().byPrincipalId("UnknownPrincipal").put(updated2).get(3, TimeUnit.SECONDS);
+        });
+
+        // RoleMappingNotFoundException
+        Assertions.assertNotNull(executionException.getCause());
+        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException.getCause().getClass());
+        Assertions.assertEquals(404, ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getErrorCode());
+        Assertions.assertEquals("RoleMappingNotFoundException", ((io.apicurio.registry.rest.client.models.Error)executionException.getCause()).getName());
+
+        // Delete a role mapping
+        clientV2.admin().roleMappings().byPrincipalId("TestUser2").delete().get(3, TimeUnit.SECONDS);
+
+        // Get the (deleted) mapping by name (should fail with a 404)
+        TestUtils.retry(() -> {
+            var executionException2 = Assertions.assertThrows(ExecutionException.class, () -> {
+                clientV2.admin().roleMappings().byPrincipalId("TestUser2").get().get(3, TimeUnit.SECONDS);
+            });
+            // RoleMappingNotFoundException
+            Assertions.assertNotNull(executionException2.getCause());
+            Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException2.getCause().getClass());
+            Assertions.assertEquals(404, ((io.apicurio.registry.rest.client.models.Error)executionException2.getCause()).getErrorCode());
+            Assertions.assertEquals("RoleMappingNotFoundException", ((io.apicurio.registry.rest.client.models.Error)executionException2.getCause()).getName());
+        });
+
+        // Get the list of mappings (should be 1 of them)
+        TestUtils.retry(() -> {
+            List<RoleMapping> mappings = clientV2.admin().roleMappings().get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(1, mappings.size());
+            Assertions.assertEquals("TestUser", mappings.get(0).getPrincipalId());
+        });
+
+        // Clean up
+        clientV2.admin().roleMappings().byPrincipalId("TestUser").delete().get(3, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testConfigProperties() throws Exception {
+        String property1Name = "registry.ccompat.legacy-id-mode.enabled";
+        String property2Name = "registry.ui.features.readOnly";
+
+        // Start with all default values
+        List<ConfigurationProperty> configProperties = clientV2.admin().config().properties().get().get(3, TimeUnit.SECONDS);
+        Assertions.assertFalse(configProperties.isEmpty());
+        Optional<ConfigurationProperty> anonymousRead = configProperties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst();
+        Assertions.assertTrue(anonymousRead.isPresent());
+        Assertions.assertEquals("false", anonymousRead.get().getValue());
+        Optional<ConfigurationProperty> obacLimit = configProperties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst();
+        Assertions.assertTrue(obacLimit.isPresent());
+        Assertions.assertEquals("false", obacLimit.get().getValue());
+
+        // Change value of anonymous read access
+        UpdateConfigurationProperty updateProp = new UpdateConfigurationProperty();
+        updateProp.setValue("true");
+        clientV2.admin().config().properties().byPropertyName(property1Name).put(updateProp).get(3, TimeUnit.SECONDS);
+
+        // Verify the property was set.
+        TestUtils.retry(() -> {
+            ConfigurationProperty prop = clientV2.admin().config().properties().byPropertyName(property1Name).get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(property1Name, prop.getName());
+            Assertions.assertEquals("true", prop.getValue());
+        });
+        TestUtils.retry(() -> {
+            List<ConfigurationProperty> properties = clientV2.admin().config().properties().get().get(3, TimeUnit.SECONDS);
+            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst().get();
+            Assertions.assertEquals(property1Name, prop.getName());
+            Assertions.assertEquals("true", prop.getValue());
+        });
+
+        // Set another property
+        updateProp.setValue("true");
+        clientV2.admin().config().properties().byPropertyName(property2Name).put(updateProp).get(3, TimeUnit.SECONDS);
+
+        // Verify the property was set.
+        TestUtils.retry(() -> {
+            ConfigurationProperty prop = clientV2.admin().config().properties().byPropertyName(property2Name).get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(property2Name, prop.getName());
+            Assertions.assertEquals("true", prop.getValue());
+        });
+        TestUtils.retry(() -> {
+            List<ConfigurationProperty> properties = clientV2.admin().config().properties().get().get(3, TimeUnit.SECONDS);
+            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst().get();
+            Assertions.assertEquals("true", prop.getValue());
+        });
+
+        // Reset a config property
+        clientV2.admin().config().properties().byPropertyName(property2Name).delete().get(3, TimeUnit.SECONDS);
+
+        // Verify the property was reset.
+        TestUtils.retry(() -> {
+            ConfigurationProperty prop = clientV2.admin().config().properties().byPropertyName(property2Name).get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(property2Name, prop.getName());
+            Assertions.assertEquals("false", prop.getValue());
+        });
+        TestUtils.retry(() -> {
+            List<ConfigurationProperty> properties = clientV2.admin().config().properties().get().get(3, TimeUnit.SECONDS);
+            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst().get();
+            Assertions.assertEquals("false", prop.getValue());
+        });
+
+        // Reset the other property
+        clientV2.admin().config().properties().byPropertyName(property1Name).delete().get(3, TimeUnit.SECONDS);
+
+        // Verify the property was reset.
+        TestUtils.retry(() -> {
+            ConfigurationProperty prop = clientV2.admin().config().properties().byPropertyName(property1Name).get().get(3, TimeUnit.SECONDS);
+            Assertions.assertEquals(property1Name, prop.getName());
+            Assertions.assertEquals("false", prop.getValue());
+        });
+        TestUtils.retry(() -> {
+            List<ConfigurationProperty> properties = clientV2.admin().config().properties().get().get(3, TimeUnit.SECONDS);
+            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst().get();
+            Assertions.assertEquals(property1Name, prop.getName());
+            Assertions.assertEquals("false", prop.getValue());
+        });
+
+        // Try to set a config property that doesn't exist.
+        var executionException1 = Assertions.assertThrows(ExecutionException.class, () -> {
+            updateProp.setValue("foobar");
+            clientV2.admin().config().properties().byPropertyName("property-does-not-exist").put(updateProp).get(3, TimeUnit.SECONDS);
+        });
+        // ConfigPropertyNotFoundException
+        Assertions.assertNotNull(executionException1.getCause());
+        Assertions.assertEquals(io.apicurio.registry.rest.client.models.Error.class, executionException1.getCause().getClass());
+        Assertions.assertEquals(404, ((io.apicurio.registry.rest.client.models.Error)executionException1.getCause()).getErrorCode());
+        Assertions.assertEquals("ConfigPropertyNotFoundException", ((io.apicurio.registry.rest.client.models.Error)executionException1.getCause()).getName());
+
+        // Try to set a Long property to "foobar" (should be invalid type)
+        var executionException2 = Assertions.assertThrows(ExecutionException.class, () -> {
+            updateProp.setValue("foobar");
+            clientV2.admin().config().properties().byPropertyName("registry.download.href.ttl").put(updateProp).get(3, TimeUnit.SECONDS);
+        });
+        // InvalidPropertyValueException
+        Assertions.assertNotNull(executionException2.getCause());
+        Assertions.assertEquals(ApiException.class, executionException2.getCause().getClass());
+        Assertions.assertEquals(400, ((ApiException)executionException2.getCause()).responseStatusCode);
+    }
+
+    @Test
+    public void testForceArtifactType() throws Exception {
+        var artifactContent = resourceToInputStream("sample.wsdl");
+
+        String groupId = TestUtils.generateGroupId();
+        String artifactId = TestUtils.generateArtifactId();
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(IOUtils.toString(artifactContent));
+        var postReq = clientV2.groups().byGroupId(groupId).artifacts().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+            config.headers.add("X-Registry-ArtifactType", ArtifactType.AVRO);
+        }).get(3, TimeUnit.SECONDS);
+
+        var meta = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().get().get(3, TimeUnit.SECONDS);
+
+        assertEquals(ArtifactType.AVRO, meta.getType());
+
+        assertTrue(clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).get().get(3, TimeUnit.SECONDS).readAllBytes().length > 0);
 
     }
-//
-//    @Test
-//    public void testConfigProperties() throws Exception {
-//        String property1Name = "registry.ccompat.legacy-id-mode.enabled";
-//        String property2Name = "registry.ui.features.readOnly";
-//
-//        // Start with all default values
-//        List<ConfigurationProperty> configProperties = clientV2.listConfigProperties();
-//        Assertions.assertFalse(configProperties.isEmpty());
-//        Optional<ConfigurationProperty> anonymousRead = configProperties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst();
-//        Assertions.assertTrue(anonymousRead.isPresent());
-//        Assertions.assertEquals("false", anonymousRead.get().getValue());
-//        Optional<ConfigurationProperty> obacLimit = configProperties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst();
-//        Assertions.assertTrue(obacLimit.isPresent());
-//        Assertions.assertEquals("false", obacLimit.get().getValue());
-//
-//        // Change value of anonymous read access
-//        clientV2.setConfigProperty(property1Name, "true");
-//
-//        // Verify the property was set.
-//        TestUtils.retry(() -> {
-//            ConfigurationProperty prop = clientV2.getConfigProperty(property1Name);
-//            Assertions.assertEquals(property1Name, prop.getName());
-//            Assertions.assertEquals("true", prop.getValue());
-//        });
-//        TestUtils.retry(() -> {
-//            List<ConfigurationProperty> properties = clientV2.listConfigProperties();
-//            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst().get();
-//            Assertions.assertEquals(property1Name, prop.getName());
-//            Assertions.assertEquals("true", prop.getValue());
-//        });
-//
-//        // Set another property
-//        clientV2.setConfigProperty(property2Name, "true");
-//
-//        // Verify the property was set.
-//        TestUtils.retry(() -> {
-//            ConfigurationProperty prop = clientV2.getConfigProperty(property2Name);
-//            Assertions.assertEquals(property2Name, prop.getName());
-//            Assertions.assertEquals("true", prop.getValue());
-//        });
-//        TestUtils.retry(() -> {
-//            List<ConfigurationProperty> properties = clientV2.listConfigProperties();
-//            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst().get();
-//            Assertions.assertEquals("true", prop.getValue());
-//        });
-//
-//        // Reset a config property
-//        clientV2.deleteConfigProperty(property2Name);
-//
-//        // Verify the property was reset.
-//        TestUtils.retry(() -> {
-//            ConfigurationProperty prop = clientV2.getConfigProperty(property2Name);
-//            Assertions.assertEquals(property2Name, prop.getName());
-//            Assertions.assertEquals("false", prop.getValue());
-//        });
-//        TestUtils.retry(() -> {
-//            List<ConfigurationProperty> properties = clientV2.listConfigProperties();
-//            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property2Name)).findFirst().get();
-//            Assertions.assertEquals("false", prop.getValue());
-//        });
-//
-//        // Reset the other property
-//        clientV2.deleteConfigProperty(property1Name);
-//
-//        // Verify the property was reset.
-//        TestUtils.retry(() -> {
-//            ConfigurationProperty prop = clientV2.getConfigProperty(property1Name);
-//            Assertions.assertEquals(property1Name, prop.getName());
-//            Assertions.assertEquals("false", prop.getValue());
-//        });
-//        TestUtils.retry(() -> {
-//            List<ConfigurationProperty> properties = clientV2.listConfigProperties();
-//            ConfigurationProperty prop = properties.stream().filter(cp -> cp.getName().equals(property1Name)).findFirst().get();
-//            Assertions.assertEquals(property1Name, prop.getName());
-//            Assertions.assertEquals("false", prop.getValue());
-//        });
-//
-//        // Try to set a config property that doesn't exist.
-//        Assertions.assertThrows(ConfigPropertyNotFoundException.class, () -> {
-//            clientV2.setConfigProperty("property-does-not-exist", "foobar");
-//        });
-//
-//        // Try to set a Long property to "foobar" (should be invalid type)
-//        Assertions.assertThrows(InvalidPropertyValueException.class, () -> {
-//            clientV2.setConfigProperty("registry.download.href.ttl", "foobar");
-//        });
-//    }
-//
-//    @Test
-//    public void testForceArtifactType() throws Exception {
-//        var artifactContent = resourceToInputStream("sample.wsdl");
-//
-//        String groupId = TestUtils.generateGroupId();
-//        String artifactId = TestUtils.generateArtifactId();
-//
-//        clientV2.createArtifact(groupId, artifactId, ArtifactType.AVRO, artifactContent);
-//
-//        var meta = clientV2.getArtifactMetaData(groupId, artifactId);
-//
-//        assertEquals(ArtifactType.AVRO, meta.getType());
-//
-//        assertNotNull(clientV2.getLatestArtifact(groupId, artifactId));
-//
-//    }
-//
+
+// TODO: verify how to port this test, I think that retries are happening behind the scenes, but not sure
 //    @Test
 //    public void testClientRateLimitError() {
 //        TooManyRequestsMock mock = new TooManyRequestsMock();
 //        mock.start();
 //        try {
-//            RegistryClient client = RegistryClientFactory.create(mock.getMockUrl());
+//            var adapter = new OkHttpRequestAdapter(new AnonymousAuthenticationProvider());
+//            adapter.setBaseUrl(mock.getMockUrl());
+//            RegistryClient client = new RegistryClient(adapter);
+//
+//            var executionException1 = Assertions.assertThrows(ExecutionException.class, () -> client.groups().byGroupId("test").artifacts().byArtifactId("test").get().get(3, TimeUnit.SECONDS));
+//            Assertions.assertNotNull(executionException1.getCause());
+//            Assertions.assertEquals(ApiException.class, executionException1.getCause().getClass());
+//            Assertions.assertEquals(429, ((ApiException)executionException1.getCause()).responseStatusCode);
 //
 //            Assertions.assertThrows(RateLimitedClientException.class, () -> client.getLatestArtifact("test", "test"));
 //
@@ -1732,27 +1767,31 @@ public class RegistryClientTest extends AbstractResourceTestBase {
 //            mock.stop();
 //        }
 //    }
-//
-//    @Test
-//    public void testGetArtifactVersionByContent_DuplicateContent() throws Exception {
-//        //Preparation
-//        final String groupId = "testGetArtifactVersionByContent_DuplicateContent";
-//        final String artifactId = generateArtifactId();
-//
-//        final ArtifactMetaData v1md = createArtifact(groupId, artifactId);
-//
-//        final InputStream v2stream = IoUtil.toStream(ARTIFACT_CONTENT.getBytes(StandardCharsets.UTF_8));
-//        final VersionMetaData v2md = clientV2.createArtifactVersion(groupId, artifactId, null, v2stream);
-//
-//        //Execution
-//        final VersionMetaData vmd = clientV2.getArtifactVersionMetaDataByContent(groupId, artifactId, IoUtil.toStream(ARTIFACT_CONTENT.getBytes()));
-//
-//        //Assertions
-//        assertNotEquals(v1md.getGlobalId(), v2md.getGlobalId());
-//        assertEquals(v1md.getContentId(), v2md.getContentId());
-//
-//        assertEquals(v2md.getGlobalId(), vmd.getGlobalId());
-//        assertEquals(v2md.getId(), vmd.getId());
-//        assertEquals(v2md.getContentId(), vmd.getContentId());
-//    }
+
+    @Test
+    public void testGetArtifactVersionByContent_DuplicateContent() throws Exception {
+        //Preparation
+        final String groupId = "testGetArtifactVersionByContent_DuplicateContent";
+        final String artifactId = generateArtifactId();
+
+        final ArtifactMetaData v1md = createArtifact(groupId, artifactId);
+
+        ArtifactContent content = new ArtifactContent();
+        content.setContent(ARTIFACT_CONTENT);
+
+        final VersionMetaData v2md = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().post(content, config -> {
+            config.headers.add("X-Registry-ArtifactId", artifactId);
+        }).get(3, TimeUnit.SECONDS);
+
+        //Execution
+        final VersionMetaData vmd = clientV2.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).meta().post(content).get(3, TimeUnit.SECONDS);
+
+        //Assertions
+        assertNotEquals(v1md.getGlobalId(), v2md.getGlobalId());
+        assertEquals(v1md.getContentId(), v2md.getContentId());
+
+        assertEquals(v2md.getGlobalId(), vmd.getGlobalId());
+        assertEquals(v2md.getId(), vmd.getId());
+        assertEquals(v2md.getContentId(), vmd.getContentId());
+    }
 }
