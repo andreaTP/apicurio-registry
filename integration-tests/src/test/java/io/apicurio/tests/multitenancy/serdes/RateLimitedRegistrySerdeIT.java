@@ -17,7 +17,6 @@
 package io.apicurio.tests.multitenancy.serdes;
 
 import io.apicurio.registry.rest.client.RegistryClient;
-import io.apicurio.registry.rest.client.exception.RateLimitedClientException;
 import io.apicurio.registry.rest.v2.beans.ArtifactMetaData;
 import io.apicurio.registry.rest.v2.beans.IfExists;
 import io.apicurio.registry.serde.SerdeConfig;
