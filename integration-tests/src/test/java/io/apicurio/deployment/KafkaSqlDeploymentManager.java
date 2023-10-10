@@ -16,9 +16,7 @@
 
 package io.apicurio.deployment;
 
-import io.apicurio.registry.rest.client.RegistryClientFactory;
 import io.apicurio.tests.ApicurioRegistryBaseIT;
-import io.apicurio.tests.dbupgrade.UpgradeTestsDataInitializer;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import org.slf4j.Logger;

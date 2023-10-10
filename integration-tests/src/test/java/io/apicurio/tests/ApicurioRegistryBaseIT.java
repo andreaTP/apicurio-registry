@@ -24,6 +24,7 @@ import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.models.*;
 import io.apicurio.registry.utils.tests.SimpleDisplayName;
 import io.apicurio.registry.utils.tests.TestUtils;
+import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
 import io.apicurio.tests.utils.Constants;
 import io.apicurio.tests.utils.RegistryWaitUtils;
 import io.apicurio.tests.utils.RestConstants;
@@ -73,6 +74,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -251,7 +253,7 @@ public class ApicurioRegistryBaseIT implements TestSeparator, Constants {
 
     public static String resourceToString(String resourceName) {
         try (InputStream stream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName)) {
-            Assertions.assertNotNull(stream, "Resource not found: " + resourceName);
+            assertNotNull(stream, "Resource not found: " + resourceName);
             return new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -514,8 +516,9 @@ public class ApicurioRegistryBaseIT implements TestSeparator, Constants {
             runnable.run();
             Assertions.fail("Expected (but didn't get) a registry client application exception with code: " + expectedCode);
         } catch (Exception e) {
-            Assertions.assertEquals(expectedErrorName, e.getClass().getSimpleName(), () -> "e: " + e);
-            Assertions.assertEquals(expectedCode, errorCodeExtractor.apply(e));
+            assertNotNull(e.getCause());
+            Assertions.assertEquals(expectedErrorName, ((io.apicurio.registry.rest.client.models.Error)e.getCause()).getName());
+            Assertions.assertEquals(expectedCode, ((io.apicurio.registry.rest.client.models.Error)e.getCause()).getErrorCode());
         }
     }
 
@@ -728,5 +731,23 @@ public class ApicurioRegistryBaseIT implements TestSeparator, Constants {
                 .statusCode(returnCode)
                 .extract()
                 .response();
+    }
+
+    protected void assertNotAuthorized(ExecutionException executionException) {
+        assertNotNull(executionException.getCause());
+
+        if (executionException.getCause() instanceof NotAuthorizedException) {
+            // thrown by the token provider adapter
+        } else {
+            // mapped by Kiota
+            Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
+            Assertions.assertEquals(401, ((ApiException) executionException.getCause()).responseStatusCode);
+        }
+    }
+
+    protected void assertForbidden(ExecutionException executionException) {
+        assertNotNull(executionException.getCause());
+        Assertions.assertEquals(ApiException.class, executionException.getCause().getClass());
+        Assertions.assertEquals(403, ((ApiException)executionException.getCause()).responseStatusCode);
     }
 }
