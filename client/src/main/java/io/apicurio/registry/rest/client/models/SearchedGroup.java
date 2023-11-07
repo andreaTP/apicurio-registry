@@ -1,0 +1,194 @@
+package io.apicurio.registry.rest.client.models;
+
+import com.microsoft.kiota.serialization.AdditionalDataHolder;
+import com.microsoft.kiota.serialization.Parsable;
+import com.microsoft.kiota.serialization.ParseNode;
+import com.microsoft.kiota.serialization.SerializationWriter;
+import java.time.OffsetDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+/**
+ * Models a single group from the result set returned when searching for groups.
+ */
+@jakarta.annotation.Generated("com.microsoft.kiota")
+public class SearchedGroup implements AdditionalDataHolder, Parsable {
+    /**
+     * Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
+     */
+    private Map<String, Object> additionalData;
+    /**
+     * The createdBy property
+     */
+    private String createdBy;
+    /**
+     * The createdOn property
+     */
+    private OffsetDateTime createdOn;
+    /**
+     * The description property
+     */
+    private String description;
+    /**
+     * An ID of a single artifact group.
+     */
+    private String id;
+    /**
+     * The modifiedBy property
+     */
+    private String modifiedBy;
+    /**
+     * The modifiedOn property
+     */
+    private OffsetDateTime modifiedOn;
+    /**
+     * Instantiates a new SearchedGroup and sets the default values.
+     */
+    public SearchedGroup() {
+        this.setAdditionalData(new HashMap<>());
+    }
+    /**
+     * Creates a new instance of the appropriate class based on discriminator value
+     * @param parseNode The parse node to use to read the discriminator value and create the object
+     * @return a SearchedGroup
+     */
+    @jakarta.annotation.Nonnull
+    public static SearchedGroup createFromDiscriminatorValue(@jakarta.annotation.Nonnull final ParseNode parseNode) {
+        Objects.requireNonNull(parseNode);
+        return new SearchedGroup();
+    }
+    /**
+     * Gets the AdditionalData property value. Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
+     * @return a Map<String, Object>
+     */
+    @jakarta.annotation.Nonnull
+    public Map<String, Object> getAdditionalData() {
+        return this.additionalData;
+    }
+    /**
+     * Gets the createdBy property value. The createdBy property
+     * @return a String
+     */
+    @jakarta.annotation.Nullable
+    public String getCreatedBy() {
+        return this.createdBy;
+    }
+    /**
+     * Gets the createdOn property value. The createdOn property
+     * @return a OffsetDateTime
+     */
+    @jakarta.annotation.Nullable
+    public OffsetDateTime getCreatedOn() {
+        return this.createdOn;
+    }
+    /**
+     * Gets the description property value. The description property
+     * @return a String
+     */
+    @jakarta.annotation.Nullable
+    public String getDescription() {
+        return this.description;
+    }
+    /**
+     * The deserialization information for the current model
+     * @return a Map<String, java.util.function.Consumer<ParseNode>>
+     */
+    @jakarta.annotation.Nonnull
+    public Map<String, java.util.function.Consumer<ParseNode>> getFieldDeserializers() {
+        final HashMap<String, java.util.function.Consumer<ParseNode>> deserializerMap = new HashMap<String, java.util.function.Consumer<ParseNode>>(6);
+        deserializerMap.put("createdBy", (n) -> { this.setCreatedBy(n.getStringValue()); });
+        deserializerMap.put("createdOn", (n) -> { this.setCreatedOn(n.getOffsetDateTimeValue()); });
+        deserializerMap.put("description", (n) -> { this.setDescription(n.getStringValue()); });
+        deserializerMap.put("id", (n) -> { this.setId(n.getStringValue()); });
+        deserializerMap.put("modifiedBy", (n) -> { this.setModifiedBy(n.getStringValue()); });
+        deserializerMap.put("modifiedOn", (n) -> { this.setModifiedOn(n.getOffsetDateTimeValue()); });
+        return deserializerMap;
+    }
+    /**
+     * Gets the id property value. An ID of a single artifact group.
+     * @return a String
+     */
+    @jakarta.annotation.Nullable
+    public String getId() {
+        return this.id;
+    }
+    /**
+     * Gets the modifiedBy property value. The modifiedBy property
+     * @return a String
+     */
+    @jakarta.annotation.Nullable
+    public String getModifiedBy() {
+        return this.modifiedBy;
+    }
+    /**
+     * Gets the modifiedOn property value. The modifiedOn property
+     * @return a OffsetDateTime
+     */
+    @jakarta.annotation.Nullable
+    public OffsetDateTime getModifiedOn() {
+        return this.modifiedOn;
+    }
+    /**
+     * Serializes information the current object
+     * @param writer Serialization writer to use to serialize this model
+     */
+    public void serialize(@jakarta.annotation.Nonnull final SerializationWriter writer) {
+        Objects.requireNonNull(writer);
+        writer.writeStringValue("createdBy", this.getCreatedBy());
+        writer.writeOffsetDateTimeValue("createdOn", this.getCreatedOn());
+        writer.writeStringValue("description", this.getDescription());
+        writer.writeStringValue("id", this.getId());
+        writer.writeStringValue("modifiedBy", this.getModifiedBy());
+        writer.writeOffsetDateTimeValue("modifiedOn", this.getModifiedOn());
+        writer.writeAdditionalData(this.getAdditionalData());
+    }
+    /**
+     * Sets the AdditionalData property value. Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.
+     * @param value Value to set for the AdditionalData property.
+     */
+    public void setAdditionalData(@jakarta.annotation.Nullable final Map<String, Object> value) {
+        this.additionalData = value;
+    }
+    /**
+     * Sets the createdBy property value. The createdBy property
+     * @param value Value to set for the createdBy property.
+     */
+    public void setCreatedBy(@jakarta.annotation.Nullable final String value) {
+        this.createdBy = value;
+    }
+    /**
+     * Sets the createdOn property value. The createdOn property
+     * @param value Value to set for the createdOn property.
+     */
+    public void setCreatedOn(@jakarta.annotation.Nullable final OffsetDateTime value) {
+        this.createdOn = value;
+    }
+    /**
+     * Sets the description property value. The description property
+     * @param value Value to set for the description property.
+     */
+    public void setDescription(@jakarta.annotation.Nullable final String value) {
+        this.description = value;
+    }
+    /**
+     * Sets the id property value. An ID of a single artifact group.
+     * @param value Value to set for the id property.
+     */
+    public void setId(@jakarta.annotation.Nullable final String value) {
+        this.id = value;
+    }
+    /**
+     * Sets the modifiedBy property value. The modifiedBy property
+     * @param value Value to set for the modifiedBy property.
+     */
+    public void setModifiedBy(@jakarta.annotation.Nullable final String value) {
+        this.modifiedBy = value;
+    }
+    /**
+     * Sets the modifiedOn property value. The modifiedOn property
+     * @param value Value to set for the modifiedOn property.
+     */
+    public void setModifiedOn(@jakarta.annotation.Nullable final OffsetDateTime value) {
+        this.modifiedOn = value;
+    }
+}

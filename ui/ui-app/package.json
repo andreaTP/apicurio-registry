@@ -7,6 +7,7 @@
   "private": true,
   "scripts": {
     "postinstall": "node .fix_yaml.cjs",
+    "kiota-generate": "kiota generate -l typescript -d ../../common/src/main/resources/META-INF/openapi.json -c RegistryClient -o ./src/client",
     "clean": "rimraf dist",
     "dev": "vite",
     "build": "tsc && vite build",
@@ -15,6 +16,7 @@
   "devDependencies": {
     "@apicurio/eslint-config": "0.2.0",
     "@monaco-editor/react": "4.6.0",
+    "@redhat-developer/kiota-gen": "^0.1.0",
     "@types/luxon": "3.3.3",
     "@types/react": "18.2.36",
     "@types/react-dom": "18.2.14",
