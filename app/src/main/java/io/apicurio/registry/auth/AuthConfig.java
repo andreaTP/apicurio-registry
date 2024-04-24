@@ -20,6 +20,9 @@ public class AuthConfig {
     @ConfigProperty(name = "registry.auth.enabled", defaultValue = "false")
     boolean authenticationEnabled;
 
+    @ConfigProperty(name = "registry.basic.auth.enabled", defaultValue = "false")
+    boolean basicAuthEnabled;
+
     @ConfigProperty(name = "registry.auth.role-based-authorization", defaultValue = "false")
     @Info(category = "auth", description = "Enable role based authorization", availableSince = "2.1.0.Final")
     boolean roleBasedAuthorizationEnabled;
