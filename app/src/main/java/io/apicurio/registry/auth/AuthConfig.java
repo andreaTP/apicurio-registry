@@ -18,9 +18,11 @@ public class AuthConfig {
     Logger log;
 
     @ConfigProperty(name = "registry.auth.enabled", defaultValue = "false")
+    @Info(category = "auth", description = "Authentication enabled", availableSince = "3.0.0")
     boolean authenticationEnabled;
 
     @ConfigProperty(name = "registry.basic.auth.enabled", defaultValue = "false")
+    @Info(category = "auth", description = "Basic Auth enabled", availableSince = "3.0.0")
     boolean basicAuthEnabled;
 
     @ConfigProperty(name = "registry.auth.role-based-authorization", defaultValue = "false")
