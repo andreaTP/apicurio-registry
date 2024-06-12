@@ -16,8 +16,6 @@
 
 package io.apicurio.registry.tools.kafkasqltopicimport;
 
-import lombok.*;
-
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>
  */

@@ -1,12 +1,10 @@
 package io.apicurio.registry.rest;
 
-import io.apicurio.registry.ccompat.rest.error.*;
 import io.apicurio.registry.ccompat.rest.error.ConflictException;
 import io.apicurio.registry.rest.v3.beans.Error;
 import io.apicurio.registry.rules.RuleViolationException;
 import io.apicurio.registry.services.http.ErrorHttpResponse;
 import io.apicurio.registry.services.http.RegistryExceptionMapperService;
-import io.apicurio.registry.storage.error.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -25,7 +23,6 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 
 /**
  * TODO use v1 beans when appropriate (when handling REST API v1 calls)
- *
  */
 @ApplicationScoped
 @Provider
@@ -82,15 +79,12 @@ public class RegistryExceptionMapper implements ExceptionMapper<Throwable> {
             error.setName(null);
             error.setErrorCode(CONFLUENT_CODE_MAP.getOrDefault(t.getClass(), 0));
         }
-        return builder.type(MediaType.APPLICATION_JSON)
-                .entity(error)
-                .build();
+        return builder.type(MediaType.APPLICATION_JSON).entity(error).build();
     }
 
     /**
-     * Returns true if the endpoint that caused the error is a "ccompat" endpoint.  If so
-     * we need to simplify the error we return.  The apicurio error structure has at least
-     * one additional property.
+     * Returns true if the endpoint that caused the error is a "ccompat" endpoint. If so we need to simplify
+     * the error we return. The apicurio error structure has at least one additional property.
      */
     private boolean isCompatEndpoint() {
         if (this.request != null) {

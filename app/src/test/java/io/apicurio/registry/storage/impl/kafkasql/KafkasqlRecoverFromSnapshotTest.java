@@ -44,27 +44,31 @@ public class KafkasqlRecoverFromSnapshotTest extends AbstractResourceTestBase {
 
     @BeforeAll
     public void init() {
-        //Create a bunch of artifacts and rules, so they're added on top of the snapshot.
+        // Create a bunch of artifacts and rules, so they're added on top of the snapshot.
         String simpleAvro = resourceToString("avro.json");
 
         for (int idx = 0; idx < 1000; idx++) {
             System.out.println("Iteration: " + idx);
             String artifactId = UUID.randomUUID().toString();
-            CreateArtifact createArtifact = TestUtils.clientCreateArtifact(artifactId, ArtifactType.AVRO, simpleAvro,
-                    ContentTypes.APPLICATION_JSON);
-            clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID).artifacts().post(createArtifact, config -> config.headers.add("X-Registry-ArtifactId", artifactId));
+            CreateArtifact createArtifact = TestUtils.clientCreateArtifact(artifactId, ArtifactType.AVRO,
+                    simpleAvro, ContentTypes.APPLICATION_JSON);
+            clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID).artifacts().post(createArtifact,
+                    config -> config.headers.add("X-Registry-ArtifactId", artifactId));
             CreateRule createRule = new CreateRule();
             createRule.setRuleType(RuleType.VALIDITY);
             createRule.setConfig("SYNTAX_ONLY");
-            clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID).artifacts().byArtifactId(artifactId).rules().post(createRule);        }
+            clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID).artifacts()
+                    .byArtifactId(artifactId).rules().post(createRule);
+        }
     }
 
     @Test
     public void testRecoverFromSnapshot() throws InterruptedException {
-        //We expect 4001 artifacts coming from the snapshot
+        // We expect 4001 artifacts coming from the snapshot
         Assertions.assertEquals(1000, clientV3.groups().byGroupId("default").artifacts().get().getCount());
-        //We expect another 1000 artifacts coming added on top of the snapshot
-        Assertions.assertEquals(1000, clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID).artifacts().get().getCount());
+        // We expect another 1000 artifacts coming added on top of the snapshot
+        Assertions.assertEquals(1000, clientV3.groups().byGroupId(NEW_ARTIFACTS_SNAPSHOT_TEST_GROUP_ID)
+                .artifacts().get().getCount());
     }
 
     protected static class KafkaSqlSnapshotTestInitializer implements QuarkusTestResourceLifecycleManager {
@@ -85,7 +89,8 @@ public class KafkasqlRecoverFromSnapshotTest extends AbstractResourceTestBase {
         public Map<String, String> start() {
             Properties props = connectionProperties();
 
-            KafkaUtil.createTopics(props, Set.of("kafkasql-snapshots", "kafkasql-journal"), Collections.emptyMap());
+            KafkaUtil.createTopics(props, Set.of("kafkasql-snapshots", "kafkasql-journal"),
+                    Collections.emptyMap());
 
             prepareSnapshotMarker(props);
             prepareSnapshotMessages(props);
@@ -97,39 +102,42 @@ public class KafkasqlRecoverFromSnapshotTest extends AbstractResourceTestBase {
             StringSerializer keySerializer = new StringSerializer();
             StringSerializer valueSerializer = new StringSerializer();
 
-            //Create the data producer to send a snapshot marker
+            // Create the data producer to send a snapshot marker
             dataProducer = new KafkaProducer<>(props, keySerializer, valueSerializer);
-            RecordHeader messageTypeHeader = new RecordHeader("mt", "CreateSnapshot1Message".getBytes(StandardCharsets.UTF_8));
+            RecordHeader messageTypeHeader = new RecordHeader("mt",
+                    "CreateSnapshot1Message".getBytes(StandardCharsets.UTF_8));
             ProducerRecord<String, String> snapshotMarkerRecord = new ProducerRecord<>("kafkasql-journal", 0,
-                    "{\"uuid\":\"1345b402-c707-457e-af76-10c1045e68e8\",\"messageType\":\"CreateSnapshot1Message\",\"partitionKey\":\"__GLOBAL_PARTITION__\"}", "{\n"
-                    + "                \"snapshotLocation\": \"/io/apicurio/registry/storage/impl/kafkasql/943e6945-5aef-4ca0-a3cd-31af380840ea.sql\",\n"
-                    + "                \"snapshotId\": \"943e6945-5aef-4ca0-a3cd-31af380840ea\",\n"
-                    + "                    \"key\": {\n"
-                    + "                \"uuid\": \"943e6945-5aef-4ca0-a3cd-31af380840ea\",\n"
-                    + "                        \"messageType\": \"CreateSnapshot1Message\",\n"
-                    + "                        \"partitionKey\": \"__GLOBAL_PARTITION__\"\n"
-                    + "            }\n"
-                    + "            }", List.of(messageTypeHeader));
+                    "{\"uuid\":\"1345b402-c707-457e-af76-10c1045e68e8\",\"messageType\":\"CreateSnapshot1Message\",\"partitionKey\":\"__GLOBAL_PARTITION__\"}",
+                    "{\n" + "                \"snapshotLocation\": \"/io/apicurio/registry/storage/impl/kafkasql/943e6945-5aef-4ca0-a3cd-31af380840ea.sql\",\n"
+                            + "                \"snapshotId\": \"943e6945-5aef-4ca0-a3cd-31af380840ea\",\n"
+                            + "                    \"key\": {\n"
+                            + "                \"uuid\": \"943e6945-5aef-4ca0-a3cd-31af380840ea\",\n"
+                            + "                        \"messageType\": \"CreateSnapshot1Message\",\n"
+                            + "                        \"partitionKey\": \"__GLOBAL_PARTITION__\"\n"
+                            + "            }\n" + "            }",
+                    List.of(messageTypeHeader));
 
-            //Send snapshot marker
+            // Send snapshot marker
             dataProducer.send(snapshotMarkerRecord).get();
         }
 
-        private void prepareSnapshotMessages(Properties props) throws URISyntaxException, ExecutionException, InterruptedException {
+        private void prepareSnapshotMessages(Properties props)
+                throws URISyntaxException, ExecutionException, InterruptedException {
             StringSerializer keySerializer = new StringSerializer();
             StringSerializer valueSerializer = new StringSerializer();
 
-            URL resource = getClass().getResource("/io/apicurio/registry/storage/impl/kafkasql/943e6945-5aef-4ca0-a3cd-31af380840ea.sql");
+            URL resource = getClass().getResource(
+                    "/io/apicurio/registry/storage/impl/kafkasql/943e6945-5aef-4ca0-a3cd-31af380840ea.sql");
             String snapshotLocation = Paths.get(resource.toURI()).toFile().getAbsolutePath();
 
-            //Send three messages to the snapshots topic, two invalid, and one valid. Only the latest valid one must be processed.
-            ProducerRecord<String, String> olderInvalidSnapshot = new ProducerRecord<>("kafkasql-snapshots", 0, "1312b402-c707-457e-af76-10c1045e68e8",
-                    "snapshotLocation",
-                    Collections.emptyList());
-            ProducerRecord<String, String> record = new ProducerRecord<>("kafkasql-snapshots", 0, "943e6945-5aef-4ca0-a3cd-31af380840ea", snapshotLocation,
-                    Collections.emptyList());
-            ProducerRecord<String, String> newerInvalidSnaphot = new ProducerRecord<>("kafkasql-snapshots", 0, "1322b402-c707-457e-af76-10c1045e68e8", "",
-                    Collections.emptyList());
+            // Send three messages to the snapshots topic, two invalid, and one valid. Only the latest valid
+            // one must be processed.
+            ProducerRecord<String, String> olderInvalidSnapshot = new ProducerRecord<>("kafkasql-snapshots",
+                    0, "1312b402-c707-457e-af76-10c1045e68e8", "snapshotLocation", Collections.emptyList());
+            ProducerRecord<String, String> record = new ProducerRecord<>("kafkasql-snapshots", 0,
+                    "943e6945-5aef-4ca0-a3cd-31af380840ea", snapshotLocation, Collections.emptyList());
+            ProducerRecord<String, String> newerInvalidSnaphot = new ProducerRecord<>("kafkasql-snapshots", 0,
+                    "1322b402-c707-457e-af76-10c1045e68e8", "", Collections.emptyList());
 
             // Create the Kafka Producer
             snapshotsProducer = new KafkaProducer<>(props, keySerializer, valueSerializer);
@@ -141,7 +149,8 @@ public class KafkasqlRecoverFromSnapshotTest extends AbstractResourceTestBase {
 
         public Properties connectionProperties() {
             Properties properties = new Properties();
-            properties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, System.getProperty("bootstrap.servers.external"));
+            properties.put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG,
+                    System.getProperty("bootstrap.servers.external"));
             properties.put(CommonClientConfigs.CONNECTIONS_MAX_IDLE_MS_CONFIG, 10000);
             properties.put(CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG, 5000);
             return properties;

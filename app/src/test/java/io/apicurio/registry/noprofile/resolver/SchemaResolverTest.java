@@ -3,7 +3,6 @@ package io.apicurio.registry.noprofile.resolver;
 import io.apicurio.registry.AbstractResourceTestBase;
 import io.apicurio.registry.client.auth.VertXAuthFactory;
 import io.apicurio.registry.model.GroupId;
-import io.apicurio.registry.resolver.*;
 import io.apicurio.registry.resolver.data.Metadata;
 import io.apicurio.registry.resolver.data.Record;
 import io.apicurio.registry.resolver.strategy.ArtifactReference;
@@ -48,7 +47,8 @@ public class SchemaResolverTest extends AbstractResourceTestBase {
         resolver.configure(config, new SchemaParser<Schema, GenericRecord>() {
 
             @Override
-            public Schema parseSchema(byte[] rawSchema, Map<String, ParsedSchema<Schema>> resolvedReferences) {
+            public Schema parseSchema(byte[] rawSchema,
+                    Map<String, ParsedSchema<Schema>> resolvedReferences) {
                 return null;
             }
 
@@ -76,13 +76,15 @@ public class SchemaResolverTest extends AbstractResourceTestBase {
             }
         });
 
-        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
+        Schema schema = new Schema.Parser().parse(
+                "{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
         String artifactId = TestUtils.generateArtifactId();
         createArtifact(artifactId, ArtifactType.AVRO, schema.toString(), ContentTypes.APPLICATION_JSON);
 
         GenericRecord avroRecord = new GenericData.Record(schema);
         avroRecord.put("bar", "somebar");
-        Record<GenericRecord> record = new CustomResolverRecord(avroRecord, ArtifactReference.builder().groupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString()).artifactId(artifactId).build());
+        Record<GenericRecord> record = new CustomResolverRecord(avroRecord, ArtifactReference.builder()
+                .groupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString()).artifactId(artifactId).build());
         var lookup = resolver.resolveSchema(record);
 
         assertNull(lookup.getGroupId());
@@ -90,8 +92,12 @@ public class SchemaResolverTest extends AbstractResourceTestBase {
         assertEquals(schema.toString(), new String(lookup.getParsedSchema().getRawSchema()));
         assertNull(lookup.getParsedSchema().getParsedSchema());
 
-        var runtimeException = Assertions.assertThrows(RuntimeException.class, () -> resolver.resolveSchema(new CustomResolverRecord(avroRecord, ArtifactReference.builder().groupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString()).artifactId("foo").build())));
-        io.apicurio.registry.rest.client.models.Error error = (io.apicurio.registry.rest.client.models.Error) runtimeException.getCause();
+        var runtimeException = Assertions.assertThrows(RuntimeException.class,
+                () -> resolver.resolveSchema(new CustomResolverRecord(avroRecord,
+                        ArtifactReference.builder().groupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString())
+                                .artifactId("foo").build())));
+        io.apicurio.registry.rest.client.models.Error error = (io.apicurio.registry.rest.client.models.Error) runtimeException
+                .getCause();
         assertEquals("VersionNotFoundException", error.getName());
         assertEquals(404, error.getErrorCode());
 

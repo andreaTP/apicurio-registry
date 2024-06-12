@@ -1,7 +1,6 @@
 package io.apicurio.example.debezium.model;
 
 import example.inventory.products.Value;
-import lombok.*;
 
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>
@@ -25,11 +24,7 @@ public class Product {
         if (value == null) {
             return null;
         }
-        return Product.builder()
-                .id(value.getId())
-                .name(value.getName())
-                .description(value.getDescription())
-                .weight(value.getWeight())
-                .build();
+        return Product.builder().id(value.getId()).name(value.getName()).description(value.getDescription())
+                .weight(value.getWeight()).build();
     }
 }

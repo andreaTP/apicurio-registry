@@ -1,7 +1,6 @@
 package io.apicurio.registry.storage.dto;
 
 import io.apicurio.registry.content.ContentHandle;
-import lombok.*;
 
 import java.util.List;
 

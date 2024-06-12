@@ -1,7 +1,6 @@
 package io.apicurio.example.debezium.model;
 
 import example.inventory.products_on_hand.Value;
-import lombok.*;
 
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>
@@ -21,9 +20,6 @@ public class ProductOnHand {
         if (value == null) {
             return null;
         }
-        return ProductOnHand.builder()
-                .productId(value.getProductId())
-                .quantity(value.getQuantity())
-                .build();
+        return ProductOnHand.builder().productId(value.getProductId()).quantity(value.getQuantity()).build();
     }
 }

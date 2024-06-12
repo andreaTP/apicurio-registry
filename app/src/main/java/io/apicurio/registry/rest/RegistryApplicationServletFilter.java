@@ -7,7 +7,6 @@ import io.apicurio.registry.services.http.ErrorHttpResponse;
 import io.apicurio.registry.services.http.RegistryExceptionMapperService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.ws.rs.core.MediaType;
@@ -17,10 +16,10 @@ import java.io.IOException;
 
 /**
  * This Servlet Filter combines various functionalities that can be configured using config properties:
- * Disable APIs: it's possible to provide a list of regular expressions to disable API paths.
- * The list of regular expressions will be applied to all incoming requests, if any of them match the request will get a 404 response.
- * Note: this is implemented in a servlet to be able to disable the web UI (/ui), because the web is served with Servlets
- *
+ * Disable APIs: it's possible to provide a list of regular expressions to disable API paths. The list of
+ * regular expressions will be applied to all incoming requests, if any of them match the request will get a
+ * 404 response. Note: this is implemented in a servlet to be able to disable the web UI (/ui), because the
+ * web is served with Servlets
  */
 @ApplicationScoped
 public class RegistryApplicationServletFilter implements Filter {
@@ -37,10 +36,12 @@ public class RegistryApplicationServletFilter implements Filter {
     RegistryExceptionMapperService exceptionMapper;
 
     /**
-     * @see jakarta.servlet.Filter#doFilter(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse, jakarta.servlet.FilterChain)
+     * @see jakarta.servlet.Filter#doFilter(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse,
+     *      jakarta.servlet.FilterChain)
      */
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         String requestURI = req.getRequestURI();
 
@@ -52,7 +53,7 @@ public class RegistryApplicationServletFilter implements Filter {
                 HttpServletResponse httpResponse = (HttpServletResponse) response;
                 httpResponse.reset();
                 httpResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                //important to return, to stop the filters chain
+                // important to return, to stop the filters chain
                 return;
             }
         }

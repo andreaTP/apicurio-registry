@@ -27,16 +27,13 @@ public class ArtifactBranchEntity extends Entity {
 
     public int branchOrder;
 
-
     public GAV toGAV() {
         return new GAV(groupId, artifactId, version);
     }
 
-
     public BranchId toBranchId() {
         return new BranchId(branchId);
     }
-
 
     @Override
     public EntityType getEntityType() {

@@ -11,19 +11,13 @@ public class ArtifactBranchEntityMapper implements RowMapper<ArtifactBranchEntit
 
     public static final ArtifactBranchEntityMapper instance = new ArtifactBranchEntityMapper();
 
-
     private ArtifactBranchEntityMapper() {
     }
 
-
     @Override
     public ArtifactBranchEntity map(ResultSet rs) throws SQLException {
-        return ArtifactBranchEntity.builder()
-                .groupId(SqlUtil.denormalizeGroupId(rs.getString("groupId")))
-                .artifactId(rs.getString("artifactId"))
-                .branchId(rs.getString("branchId"))
-                .branchOrder(rs.getInt("branchOrder"))
-                .version(rs.getString("version"))
-                .build();
+        return ArtifactBranchEntity.builder().groupId(SqlUtil.denormalizeGroupId(rs.getString("groupId")))
+                .artifactId(rs.getString("artifactId")).branchId(rs.getString("branchId"))
+                .branchOrder(rs.getInt("branchOrder")).version(rs.getString("version")).build();
     }
 }

@@ -1,7 +1,6 @@
 package io.apicurio.example.debezium.model;
 
 import example.inventory.addresses.Value;
-import lombok.*;
 
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>
@@ -31,14 +30,8 @@ public class Address {
         if (value == null) {
             return null;
         }
-        return Address.builder()
-                .id(value.getId())
-                .customerId(value.getCustomerId())
-                .street(value.getStreet())
-                .city(value.getCity())
-                .state(value.getState())
-                .zip(value.getZip())
-                .type(value.getType())
+        return Address.builder().id(value.getId()).customerId(value.getCustomerId()).street(value.getStreet())
+                .city(value.getCity()).state(value.getState()).zip(value.getZip()).type(value.getType())
                 .build();
     }
 }

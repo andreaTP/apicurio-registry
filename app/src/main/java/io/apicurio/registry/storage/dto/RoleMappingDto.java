@@ -1,7 +1,6 @@
 package io.apicurio.registry.storage.dto;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor

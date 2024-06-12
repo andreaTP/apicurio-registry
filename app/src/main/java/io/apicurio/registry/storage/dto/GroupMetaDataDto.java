@@ -1,7 +1,5 @@
 package io.apicurio.registry.storage.dto;
 
-import lombok.*;
-
 import java.io.Serializable;
 import java.util.Map;
 

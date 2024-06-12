@@ -5,7 +5,6 @@ import io.apicurio.registry.ui.URLUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -13,7 +12,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
 
 @ApplicationScoped
 public class RedirectFilter implements Filter {
@@ -52,8 +50,8 @@ public class RedirectFilter implements Filter {
     }
 
     /**
-     * @see jakarta.servlet.Filter#doFilter(jakarta.servlet.ServletRequest,
-     *      jakarta.servlet.ServletResponse, jakarta.servlet.FilterChain)
+     * @see jakarta.servlet.Filter#doFilter(jakarta.servlet.ServletRequest, jakarta.servlet.ServletResponse,
+     *      jakarta.servlet.FilterChain)
      */
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
@@ -69,7 +67,8 @@ public class RedirectFilter implements Filter {
             }
 
             if (redirects.containsKey(servletPath)) {
-                response.sendRedirect(urlUtil.getExternalAbsoluteURL(request, redirects.get(servletPath)).toString());
+                response.sendRedirect(
+                        urlUtil.getExternalAbsoluteURL(request, redirects.get(servletPath)).toString());
                 return;
             }
         }

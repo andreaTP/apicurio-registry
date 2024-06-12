@@ -14,13 +14,11 @@ public class ArtifactBranchAlreadyContainsVersionException extends AlreadyExists
     @Getter
     private final BranchId branchId;
 
-
     public ArtifactBranchAlreadyContainsVersionException(GAV gav, BranchId branchId) {
         super(message(gav, branchId));
         this.gav = gav;
         this.branchId = branchId;
     }
-
 
     private static String message(GAV gav, BranchId branchId) {
         return "Artifact branch '" + branchId + "' already contains version '" + gav + "'.";

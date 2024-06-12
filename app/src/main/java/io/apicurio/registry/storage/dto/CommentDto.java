@@ -1,7 +1,5 @@
 package io.apicurio.registry.storage.dto;
 
-import lombok.*;
-
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

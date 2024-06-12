@@ -53,7 +53,8 @@ public class GenerateCanonicalHashImportIT extends ApicurioRegistryBaseIT {
             String content = IoUtil.toString(jsonSchema.getSchemaStream());
             artifacts.put(artifactId, content);
         }
-        var importReq = client.admin().importEscaped().toPostRequestInformation(generateExportedZip(artifacts));
+        var importReq = client.admin().importEscaped()
+                .toPostRequestInformation(generateExportedZip(artifacts));
         importReq.headers.replace("Content-Type", Set.of("application/zip"));
         adapter.sendPrimitive(importReq, new HashMap<>(), Void.class);
 
@@ -63,11 +64,12 @@ public class GenerateCanonicalHashImportIT extends ApicurioRegistryBaseIT {
             String content = entry.getValue();
 
             /*
-            TODO: Check if the canonical hash is generated correctly.
-                  The only way is to generate canonical hash and then search artifact by it. But that needs apicurio-registry-app module as dependency.
+             * TODO: Check if the canonical hash is generated correctly. The only way is to generate canonical
+             * hash and then search artifact by it. But that needs apicurio-registry-app module as dependency.
              */
 
-            var registryContent = client.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId).versions().byVersionExpression("branch=latest").content().get();
+            var registryContent = client.groups().byGroupId(groupId).artifacts().byArtifactId(artifactId)
+                    .versions().byVersionExpression("branch=latest").content().get();
             assertNotNull(registryContent);
             assertEquals(content, IoUtil.toString(registryContent));
         }
@@ -127,14 +129,8 @@ public class GenerateCanonicalHashImportIT extends ApicurioRegistryBaseIT {
 
                 writer.writeEntity(versionEntity);
 
-                writer.writeEntity(
-                        ArtifactBranchEntity.builder()
-                                .artifactId(artifactId)
-                                .branchId(BranchId.LATEST.getRawBranchId())
-                                .branchOrder(1)
-                                .version("1")
-                                .build()
-                );
+                writer.writeEntity(ArtifactBranchEntity.builder().artifactId(artifactId)
+                        .branchId(BranchId.LATEST.getRawBranchId()).branchOrder(1).version("1").build());
             }
 
             zip.flush();

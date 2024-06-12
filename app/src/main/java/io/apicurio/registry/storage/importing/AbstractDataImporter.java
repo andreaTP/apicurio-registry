@@ -1,7 +1,6 @@
 package io.apicurio.registry.storage.importing;
 
 import io.apicurio.registry.storage.error.RegistryStorageException;
-import io.apicurio.registry.utils.impexp.*;
 import org.slf4j.Logger;
 
 public abstract class AbstractDataImporter implements DataImporter {
@@ -50,10 +49,10 @@ public abstract class AbstractDataImporter implements DataImporter {
                 // Ignore the manifest for now.
                 break;
             default:
-                throw new RegistryStorageException("Unhandled entity type during import: " + entity.getEntityType());
+                throw new RegistryStorageException(
+                        "Unhandled entity type during import: " + entity.getEntityType());
         }
     }
-
 
     protected abstract void importArtifactRule(ArtifactRuleEntity entity);
 

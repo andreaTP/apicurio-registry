@@ -16,10 +16,7 @@
 
 package io.apicurio.registry.tools.kafkasqltopicimport;
 
-import lombok.*;
-
 import java.util.List;
-
 
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>

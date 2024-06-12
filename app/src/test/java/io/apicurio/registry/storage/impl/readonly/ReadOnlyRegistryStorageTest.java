@@ -32,34 +32,44 @@ public class ReadOnlyRegistryStorageTest {
     private static final Map<String, State> EXPECTED_METHODS;
     private static final Set<String> CURRENT_METHODS;
 
-
     static {
-        EXPECTED_METHODS = Map.<String, State>ofEntries(
+        EXPECTED_METHODS = Map.<String, State> ofEntries(
                 // Keep alphabetical
                 entry("consumeDownload1", new State(true, s -> s.consumeDownload(null))),
                 entry("contentIdFromHash1", new State(false, s -> s.contentIdFromHash(null))),
                 entry("countArtifacts0", new State(false, RegistryStorage::countArtifacts)),
                 entry("countArtifactVersions2", new State(false, s -> s.countArtifactVersions(null, null))),
-                entry("countActiveArtifactVersions2", new State(false, s -> s.countActiveArtifactVersions(null, null))),
-                entry("countTotalArtifactVersions0", new State(false, RegistryStorage::countTotalArtifactVersions)),
-                entry("createArtifact8", new State(true, s -> s.createArtifact(null, null, null, null, null, null, null, null))),
-                entry("createArtifactRule4", new State(true, s -> s.createArtifactRule(null, null, null, null))),
-                entry("createArtifactVersionComment4", new State(true, s -> s.createArtifactVersionComment(null, null, null, null))),
+                entry("countActiveArtifactVersions2",
+                        new State(false, s -> s.countActiveArtifactVersions(null, null))),
+                entry("countTotalArtifactVersions0",
+                        new State(false, RegistryStorage::countTotalArtifactVersions)),
+                entry("createArtifact8",
+                        new State(true,
+                                s -> s.createArtifact(null, null, null, null, null, null, null, null))),
+                entry("createArtifactRule4",
+                        new State(true, s -> s.createArtifactRule(null, null, null, null))),
+                entry("createArtifactVersionComment4",
+                        new State(true, s -> s.createArtifactVersionComment(null, null, null, null))),
                 entry("createDownload1", new State(true, s -> s.createDownload(null))),
                 entry("createGlobalRule2", new State(true, s -> s.createGlobalRule(null, null))),
                 entry("createGroup1", new State(true, s -> s.createGroup(null))),
-                entry("createOrReplaceArtifactBranch3", new State(true, s -> s.createOrReplaceArtifactBranch(null, null, null))),
-                entry("createOrUpdateArtifactBranch2", new State(true, s -> s.createOrUpdateArtifactBranch(null, null))),
+                entry("createOrReplaceArtifactBranch3",
+                        new State(true, s -> s.createOrReplaceArtifactBranch(null, null, null))),
+                entry("createOrUpdateArtifactBranch2",
+                        new State(true, s -> s.createOrUpdateArtifactBranch(null, null))),
                 entry("createRoleMapping3", new State(true, s -> s.createRoleMapping(null, null, null))),
-                entry("deleteAllExpiredDownloads0", new State(true, RegistryStorage::deleteAllExpiredDownloads)),
+                entry("deleteAllExpiredDownloads0",
+                        new State(true, RegistryStorage::deleteAllExpiredDownloads)),
                 entry("deleteAllUserData0", new State(true, RegistryStorage::deleteAllUserData)),
                 entry("deleteArtifact2", new State(true, s -> s.deleteArtifact(null, null))),
                 entry("deleteArtifactBranch2", new State(true, s -> s.deleteArtifactBranch(null, null))),
                 entry("deleteArtifactRule3", new State(true, s -> s.deleteArtifactRule(null, null, null))),
                 entry("deleteArtifactRules2", new State(true, s -> s.deleteArtifactRules(null, null))),
                 entry("deleteArtifacts1", new State(true, s -> s.deleteArtifacts(null))),
-                entry("deleteArtifactVersion3", new State(true, s -> s.deleteArtifactVersion(null, null, null))),
-                entry("deleteArtifactVersionComment4", new State(true, s -> s.deleteArtifactVersionComment(null, null, null, null))),
+                entry("deleteArtifactVersion3",
+                        new State(true, s -> s.deleteArtifactVersion(null, null, null))),
+                entry("deleteArtifactVersionComment4",
+                        new State(true, s -> s.deleteArtifactVersionComment(null, null, null, null))),
                 entry("deleteConfigProperty1", new State(true, s -> s.deleteConfigProperty("test"))),
                 entry("deleteGlobalRule1", new State(true, s -> s.deleteGlobalRule(null))),
                 entry("deleteGlobalRules0", new State(true, RegistryStorage::deleteGlobalRules)),
@@ -70,30 +80,45 @@ public class ReadOnlyRegistryStorageTest {
                 entry("getContentById1", new State(false, s -> s.getContentById(0))),
                 entry("getArtifactBranch3", new State(false, s -> s.getArtifactBranch(null, null, null))),
                 entry("getArtifactBranches1", new State(false, s -> s.getArtifactBranches(null))),
-                entry("getArtifactBranchTip3", new State(false, s -> s.getArtifactBranchTip(null, null, null))),
+                entry("getArtifactBranchTip3",
+                        new State(false, s -> s.getArtifactBranchTip(null, null, null))),
                 entry("getArtifactIds1", new State(false, s -> s.getArtifactIds(null))),
                 entry("getArtifactMetaData2", new State(false, s -> s.getArtifactMetaData(null, null))),
                 entry("getArtifactRule3", new State(false, s -> s.getArtifactRule(null, null, null))),
                 entry("getArtifactRules2", new State(false, s -> s.getArtifactRules(null, null))),
                 entry("getArtifactVersionContent1", new State(false, s -> s.getArtifactVersionContent(0))),
-                entry("getArtifactVersionContent3", new State(false, s -> s.getArtifactVersionContent(null, null, null))),
-                entry("getArtifactVersionComments3", new State(false, s -> s.getArtifactVersionComments(null, null, null))),
-                entry("getArtifactVersionMetaData1", new State(false, s -> s.getArtifactVersionMetaData(null))),
-                entry("getArtifactVersionMetaData3", new State(false, s -> s.getArtifactVersionMetaData(null, null, null))),
-                entry("getArtifactVersionMetaDataByContent5", new State(false, s -> s.getArtifactVersionMetaDataByContent(null, null, false, null, null))),
+                entry("getArtifactVersionContent3",
+                        new State(false, s -> s.getArtifactVersionContent(null, null, null))),
+                entry("getArtifactVersionComments3",
+                        new State(false, s -> s.getArtifactVersionComments(null, null, null))),
+                entry("getArtifactVersionMetaData1",
+                        new State(false, s -> s.getArtifactVersionMetaData(null))),
+                entry("getArtifactVersionMetaData3",
+                        new State(false, s -> s.getArtifactVersionMetaData(null, null, null))),
+                entry("getArtifactVersionMetaDataByContent5",
+                        new State(false,
+                                s -> s.getArtifactVersionMetaDataByContent(null, null, false, null, null))),
                 entry("getArtifactVersions2", new State(false, s -> s.getArtifactVersions(null, null))),
-                entry("getArtifactVersions3", new State(false, s -> s.getArtifactVersions(null, null, RegistryStorage.ArtifactRetrievalBehavior.DEFAULT))),
-                entry("getEnabledArtifactContentIds2", new State(false, s -> s.getEnabledArtifactContentIds(null, null))),
-                entry("getArtifactVersionsByContentId1", new State(false, s -> s.getArtifactVersionsByContentId(0))),
+                entry("getArtifactVersions3",
+                        new State(false,
+                                s -> s.getArtifactVersions(null, null,
+                                        RegistryStorage.ArtifactRetrievalBehavior.DEFAULT))),
+                entry("getEnabledArtifactContentIds2",
+                        new State(false, s -> s.getEnabledArtifactContentIds(null, null))),
+                entry("getArtifactVersionsByContentId1",
+                        new State(false, s -> s.getArtifactVersionsByContentId(0))),
                 entry("getConfigProperties0", new State(false, DynamicConfigStorage::getConfigProperties)),
                 entry("getConfigProperty1", new State(false, s -> s.getConfigProperty(null))),
-                entry("getContentIdsReferencingArtifactVersion3", new State(false, s -> s.getContentIdsReferencingArtifactVersion(null, null, null))),
-                entry("getGlobalIdsReferencingArtifactVersion3", new State(false, s -> s.getGlobalIdsReferencingArtifactVersion(null, null, null))),
+                entry("getContentIdsReferencingArtifactVersion3",
+                        new State(false, s -> s.getContentIdsReferencingArtifactVersion(null, null, null))),
+                entry("getGlobalIdsReferencingArtifactVersion3",
+                        new State(false, s -> s.getGlobalIdsReferencingArtifactVersion(null, null, null))),
                 entry("getGlobalRule1", new State(false, s -> s.getGlobalRule(null))),
                 entry("getGlobalRules0", new State(false, RegistryStorage::getGlobalRules)),
                 entry("getGroupIds1", new State(false, s -> s.getGroupIds(null))),
                 entry("getGroupMetaData1", new State(false, s -> s.getGroupMetaData(null))),
-                entry("getInboundArtifactReferences3", new State(false, s -> s.getInboundArtifactReferences(null, null, null))),
+                entry("getInboundArtifactReferences3",
+                        new State(false, s -> s.getInboundArtifactReferences(null, null, null))),
                 entry("getRawConfigProperty1", new State(false, s -> s.getRawConfigProperty(null))),
                 entry("getRoleForPrincipal1", new State(false, s -> s.getRoleForPrincipal(null))),
                 entry("getRoleMapping1", new State(false, s -> s.getRoleMapping(null))),
@@ -111,8 +136,10 @@ public class ReadOnlyRegistryStorageTest {
                 entry("initialize0", new State(false, RegistryStorage::initialize)),
                 entry("isAlive0", new State(false, RegistryStorage::isAlive)),
                 entry("isArtifactExists2", new State(false, s -> s.isArtifactExists(null, null))),
-                entry("isArtifactRuleExists3", new State(false, s -> s.isArtifactRuleExists(null, null, null))),
-                entry("isArtifactVersionExists3", new State(false, s -> s.isArtifactVersionExists(null, null, null))),
+                entry("isArtifactRuleExists3",
+                        new State(false, s -> s.isArtifactRuleExists(null, null, null))),
+                entry("isArtifactVersionExists3",
+                        new State(false, s -> s.isArtifactVersionExists(null, null, null))),
                 entry("isContentExists1", new State(false, s -> s.isContentExists(null))),
                 entry("isGlobalRuleExists1", new State(false, s -> s.isGlobalRuleExists(null))),
                 entry("isGroupExists1", new State(false, s -> s.isGroupExists(null))),
@@ -133,26 +160,29 @@ public class ReadOnlyRegistryStorageTest {
                     var dto = new DynamicConfigPropertyDto();
                     dto.setName("test");
                     s.setConfigProperty(dto);
-                })),
-                entry("storageName0", new State(false, RegistryStorage::storageName)),
-                entry("createArtifactVersion7", new State(true, s -> s.createArtifactVersion(null, null, null, null, null, null, null))),
-                entry("updateArtifactMetaData3", new State(true, s -> s.updateArtifactMetaData(null, null, null))),
-                entry("updateArtifactRule4", new State(true, s -> s.updateArtifactRule(null, null, null, null))),
-                entry("updateArtifactVersionComment5", new State(true, s -> s.updateArtifactVersionComment(null, null, null, null, null))),
-                entry("updateArtifactVersionMetaData4", new State(true, s -> s.updateArtifactVersionMetaData(null, null, null, null))),
-                entry("updateContentCanonicalHash3", new State(true, s -> s.updateContentCanonicalHash(null, 0, null))),
+                })), entry("storageName0", new State(false, RegistryStorage::storageName)),
+                entry("createArtifactVersion7",
+                        new State(true,
+                                s -> s.createArtifactVersion(null, null, null, null, null, null, null))),
+                entry("updateArtifactMetaData3",
+                        new State(true, s -> s.updateArtifactMetaData(null, null, null))),
+                entry("updateArtifactRule4",
+                        new State(true, s -> s.updateArtifactRule(null, null, null, null))),
+                entry("updateArtifactVersionComment5",
+                        new State(true, s -> s.updateArtifactVersionComment(null, null, null, null, null))),
+                entry("updateArtifactVersionMetaData4",
+                        new State(true, s -> s.updateArtifactVersionMetaData(null, null, null, null))),
+                entry("updateContentCanonicalHash3",
+                        new State(true, s -> s.updateContentCanonicalHash(null, 0, null))),
                 entry("updateGlobalRule2", new State(true, s -> s.updateGlobalRule(null, null))),
                 entry("updateGroupMetaData2", new State(true, s -> s.updateGroupMetaData(null, null))),
                 entry("updateRoleMapping2", new State(true, s -> s.updateRoleMapping(null, null))),
                 entry("triggerSnapshotCreation0", new State(true, RegistryStorage::triggerSnapshotCreation)),
-                entry("createSnapshot1", new State(true, s -> s.createSnapshot(null)))
-        );
+                entry("createSnapshot1", new State(true, s -> s.createSnapshot(null))));
 
         CURRENT_METHODS = Arrays.stream(RegistryStorage.class.getMethods())
-                .map(m -> m.getName() + m.getParameterCount())
-                .collect(Collectors.toSet());
+                .map(m -> m.getName() + m.getParameterCount()).collect(Collectors.toSet());
     }
-
 
     @Test
     void readOnlyTest() {
@@ -167,16 +197,17 @@ public class ReadOnlyRegistryStorageTest {
         notEnabled();
     }
 
-
     private void notEnabled() {
         for (String method : CURRENT_METHODS) {
             State state = EXPECTED_METHODS.get(method);
-            assertNotNull(state, "Method " + method + " in RegistryStorage interface is not covered by this test.");
+            assertNotNull(state,
+                    "Method " + method + " in RegistryStorage interface is not covered by this test.");
             try {
                 state.runnable.run(storage);
             } catch (Exception ex) {
                 if (ex instanceof ReadOnlyStorageException) {
-                    Assertions.fail("Unexpected ReadOnlyStorageException for method " + method + " (read-only is not enabled).", ex);
+                    Assertions.fail("Unexpected ReadOnlyStorageException for method " + method
+                            + " (read-only is not enabled).", ex);
                 }
             } finally {
                 state.executed = true;
@@ -184,25 +215,28 @@ public class ReadOnlyRegistryStorageTest {
         }
         reset();
     }
-
 
     private void enabled() {
         for (String method : CURRENT_METHODS) {
             State state = EXPECTED_METHODS.get(method);
-            assertNotNull(state, "Method " + method + " in RegistryStorage interface is not covered by this test.");
+            assertNotNull(state,
+                    "Method " + method + " in RegistryStorage interface is not covered by this test.");
             try {
                 state.runnable.run(storage);
                 if (state.writes) {
-                    Assertions.fail("Expected ReadOnlyStorageException for method " + method + " (read-only is enabled).");
+                    Assertions.fail("Expected ReadOnlyStorageException for method " + method
+                            + " (read-only is enabled).");
                 }
             } catch (Exception ex) {
                 if (ex instanceof ReadOnlyStorageException) {
                     if (!state.writes) {
-                        Assertions.fail("Unexpected ReadOnlyStorageException for method " + method + " (read-only is enabled).", ex);
+                        Assertions.fail("Unexpected ReadOnlyStorageException for method " + method
+                                + " (read-only is enabled).", ex);
                     }
                 } else {
                     if (state.writes) {
-                        Assertions.fail("Expected ReadOnlyStorageException for method " + method + " (read-only is enabled).");
+                        Assertions.fail("Expected ReadOnlyStorageException for method " + method
+                                + " (read-only is enabled).");
                     }
                 }
             } finally {
@@ -212,16 +246,14 @@ public class ReadOnlyRegistryStorageTest {
         reset();
     }
 
-
     private void reset() {
-        var notExecuted = EXPECTED_METHODS.entrySet().stream()
-                .filter(e -> !e.getValue().executed)
+        var notExecuted = EXPECTED_METHODS.entrySet().stream().filter(e -> !e.getValue().executed)
                 .collect(Collectors.toSet());
-        Assertions.assertEquals(Set.of(), notExecuted, "Some method(s) expected to be in the RegistryStorage interface " +
-                "by this test are missing.");
+        Assertions.assertEquals(Set.of(), notExecuted,
+                "Some method(s) expected to be in the RegistryStorage interface "
+                        + "by this test are missing.");
         EXPECTED_METHODS.forEach((key, value) -> value.executed = false);
     }
-
 
     private static class State {
 

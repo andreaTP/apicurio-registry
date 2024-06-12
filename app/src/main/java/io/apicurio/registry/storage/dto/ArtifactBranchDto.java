@@ -1,7 +1,6 @@
 package io.apicurio.registry.storage.dto;
 
 import io.apicurio.registry.model.GAV;
-import lombok.*;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +20,6 @@ public class ArtifactBranchDto {
     private int branchOrder;
 
     private String version;
-
 
     public GAV toGAV() {
         return new GAV(groupId, artifactId, version);

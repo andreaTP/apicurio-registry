@@ -3,9 +3,8 @@ package io.apicurio.registry.storage.impl.sql;
 import java.util.List;
 
 /**
- * Returns SQL statements used by the JDB artifactStore implementation.  There are different
- * implementations of this interface depending on the database being used.
- *
+ * Returns SQL statements used by the JDB artifactStore implementation. There are different implementations of
+ * this interface depending on the database being used.
  */
 public interface SqlStatements {
 
@@ -87,8 +86,8 @@ public interface SqlStatements {
     public String insertArtifact();
 
     /**
-     * A statement used to update the 'version' column of the 'versions' table by globalId.  The value of the "versionOrder"
-     * column is copied into the "version" column.
+     * A statement used to update the 'version' column of the 'versions' table by globalId. The value of the
+     * "versionOrder" column is copied into the "version" column.
      */
     public String autoUpdateVersionForGlobalId();
 
@@ -158,7 +157,8 @@ public interface SqlStatements {
     public String selectArtifactVersionMetaData();
 
     /**
-     * A statement to select the content of an artifact version from the versions table by artifactId + version.
+     * A statement to select the content of an artifact version from the versions table by artifactId +
+     * version.
      */
     public String selectArtifactVersionContent();
 
@@ -177,12 +177,10 @@ public interface SqlStatements {
      */
     public String updateContentCanonicalHash();
 
-
     /**
      * A statement to get a single artifact (latest version) meta-data by artifactId.
      */
     public String selectArtifactMetaData();
-
 
     /**
      * A statement to select the contentId of a row in the content table by hash value.
@@ -254,11 +252,14 @@ public interface SqlStatements {
      */
 
     public String updateArtifactVersionNameByGAV();
-    public String updateArtifactVersionDescriptionByGAV();
-    public String updateArtifactVersionLabelsByGAV();
-    public String updateArtifactVersionOwnerByGAV();
-    public String updateArtifactVersionStateByGAV();
 
+    public String updateArtifactVersionDescriptionByGAV();
+
+    public String updateArtifactVersionLabelsByGAV();
+
+    public String updateArtifactVersionOwnerByGAV();
+
+    public String updateArtifactVersionStateByGAV();
 
     /**
      * A statement to delete all rows in the group_labels table for a given group.
@@ -269,7 +270,7 @@ public interface SqlStatements {
      * A statement to delete all rows in the artifact_labels table for a given artifact.
      */
     public String deleteArtifactLabels();
-    
+
     /**
      * A statement to delete the labels for a single artifact version.
      */
@@ -496,7 +497,6 @@ public interface SqlStatements {
 
     public String selectGlobalIdExists();
 
-
     /*
      * The next few statements support role mappings
      */
@@ -519,7 +519,6 @@ public interface SqlStatements {
 
     public String selectRoleMappingCountByPrincipal();
 
-
     /*
      * The next few statements support downloads.
      */
@@ -531,7 +530,6 @@ public interface SqlStatements {
     public String deleteDownload();
 
     public String deleteExpiredDownloads();
-
 
     /*
      * The next few statements support config properties.
@@ -565,9 +563,7 @@ public interface SqlStatements {
 
     public String updateVersionComment();
 
-
     // ========== Branches ==========
-
 
     public String selectGAVByGlobalId();
 

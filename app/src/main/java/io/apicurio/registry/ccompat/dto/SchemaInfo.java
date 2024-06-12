@@ -3,10 +3,8 @@ package io.apicurio.registry.ccompat.dto;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import io.apicurio.registry.ccompat.SchemaTypeFilter;
 import io.quarkus.runtime.annotations.RegisterForReflection;
-import lombok.*;
 
 import java.util.List;
 
@@ -41,6 +39,5 @@ public class SchemaInfo {
 
     public SchemaInfo() {
     }
-
 
 }

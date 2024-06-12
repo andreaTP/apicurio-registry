@@ -1,7 +1,6 @@
 package io.apicurio.registry.services.http;
 
 import io.apicurio.common.apps.config.Info;
-import io.apicurio.registry.ccompat.rest.error.*;
 import io.apicurio.registry.content.dereference.DereferencingNotSupportedException;
 import io.apicurio.registry.limits.LimitExceededException;
 import io.apicurio.registry.metrics.health.liveness.LivenessUtil;
@@ -15,7 +14,6 @@ import io.apicurio.registry.rules.DefaultRuleDeletionException;
 import io.apicurio.registry.rules.RuleViolation;
 import io.apicurio.registry.rules.RuleViolationException;
 import io.apicurio.registry.rules.UnprocessableSchemaException;
-import io.apicurio.registry.storage.error.*;
 import io.apicurio.rest.client.auth.exception.ForbiddenException;
 import io.apicurio.rest.client.auth.exception.NotAuthorizedException;
 import io.smallrye.mutiny.TimeoutException;
@@ -31,10 +29,7 @@ import org.slf4j.Logger;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.net.HttpURLConnection.*;
 
 @ApplicationScoped
 public class RegistryExceptionMapperService {
@@ -84,7 +79,8 @@ public class RegistryExceptionMapperService {
         map.put(LimitExceededException.class, HTTP_CONFLICT);
         map.put(LogConfigurationNotFoundException.class, HTTP_NOT_FOUND);
         map.put(MissingRequiredParameterException.class, HTTP_BAD_REQUEST);
-        map.put(NotAllowedException.class, HTTP_CONFLICT); // We're using 409 instead of 403 to reserve the latter for authx only.
+        map.put(NotAllowedException.class, HTTP_CONFLICT); // We're using 409 instead of 403 to reserve the
+                                                           // latter for authx only.
         map.put(NotAuthorizedException.class, HTTP_FORBIDDEN);
         map.put(NotFoundException.class, HTTP_NOT_FOUND);
         map.put(ParametersConflictException.class, HTTP_CONFLICT);
@@ -128,7 +124,7 @@ public class RegistryExceptionMapperService {
 
         if (code == HTTP_INTERNAL_ERROR) {
             // If the error is not something we should ignore, then we report it to the liveness object
-            // and log it.  Otherwise we only log it if debug logging is enabled.
+            // and log it. Otherwise we only log it if debug logging is enabled.
             if (!livenessUtil.isIgnoreError(t)) {
                 liveness.suspectWithException(t);
             }
@@ -181,8 +177,7 @@ public class RegistryExceptionMapperService {
     }
 
     /**
-     * Gets the full stack trace for the given exception and returns it as a
-     * string.
+     * Gets the full stack trace for the given exception and returns it as a string.
      *
      * @param t
      */

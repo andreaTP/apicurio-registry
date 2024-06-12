@@ -1,9 +1,6 @@
 package io.apicurio.registry.storage.dto;
 
-import lombok.*;
-
 import java.util.Date;
-
 
 @NoArgsConstructor
 @AllArgsConstructor

@@ -3,7 +3,6 @@ package io.apicurio.deployment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static io.apicurio.deployment.KubernetesTestResources.*;
 import static io.apicurio.deployment.RegistryDeploymentManager.prepareTestsInfra;
 
 public class SqlDeploymentManager {

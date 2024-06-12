@@ -81,13 +81,15 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
     @Test
     public void testConfiguration() throws Exception {
         String recordName = "myrecord3";
-        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"" + recordName + "\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
+        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"" + recordName
+                + "\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
 
         String groupId = TestUtils.generateGroupId();
         String topic = generateArtifactId();
 
-        /*final Integer globalId = */
-        createArtifact(groupId, topic + "-" + recordName, ArtifactType.AVRO, schema.toString(), ContentTypes.APPLICATION_JSON);
+        /* final Integer globalId = */
+        createArtifact(groupId, topic + "-" + recordName, ArtifactType.AVRO, schema.toString(),
+                ContentTypes.APPLICATION_JSON);
 
         Map<String, Object> config = new HashMap<>();
         config.put(SerdeConfig.REGISTRY_URL, TestUtils.getRegistryV3ApiUrl(testPort));
@@ -139,21 +141,28 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
     @Test
     public void testAvro() throws Exception {
         testAvroAutoRegisterIdInBody(RecordIdStrategy.class, () -> {
-            return restClient.groups().byGroupId("test-group-avro").artifacts().byArtifactId("myrecord3").versions().byVersionExpression("branch=latest").get();
+            return restClient.groups().byGroupId("test-group-avro").artifacts().byArtifactId("myrecord3")
+                    .versions().byVersionExpression("branch=latest").get();
         });
     }
 
     @Test
     public void testAvroQualifiedRecordIdStrategy() throws Exception {
         testAvroAutoRegisterIdInBody(QualifiedRecordIdStrategy.class, () -> {
-            return restClient.groups().byGroupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString()).artifacts().byArtifactId("test-group-avro.myrecord3").versions().byVersionExpression("branch=latest").get();
+            return restClient.groups().byGroupId(GroupId.DEFAULT.getRawGroupIdWithDefaultString()).artifacts()
+                    .byArtifactId("test-group-avro.myrecord3").versions().byVersionExpression("branch=latest")
+                    .get();
         });
     }
 
-    private void testAvroAutoRegisterIdInBody(Class<? extends ArtifactReferenceResolverStrategy<?, ?>> strategy, Supplier<VersionMetaData> artifactFinder) throws Exception {
-        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"myrecord3\",\"namespace\":\"test-group-avro\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
-        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(restClient);
-             Deserializer<GenericData.Record> deserializer = new AvroKafkaDeserializer<>(restClient)) {
+    private void testAvroAutoRegisterIdInBody(
+            Class<? extends ArtifactReferenceResolverStrategy<?, ?>> strategy,
+            Supplier<VersionMetaData> artifactFinder) throws Exception {
+        Schema schema = new Schema.Parser().parse(
+                "{\"type\":\"record\",\"name\":\"myrecord3\",\"namespace\":\"test-group-avro\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
+        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(
+                restClient);
+                Deserializer<GenericData.Record> deserializer = new AvroKafkaDeserializer<>(restClient)) {
 
             Map<String, Object> config = new HashMap<>();
             config.put(SerdeConfig.ARTIFACT_RESOLVER_STRATEGY, strategy);
@@ -194,8 +203,10 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
     @Test
     public void testAvroJSON() throws Exception {
-        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
-        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(restClient);
+        Schema schema = new Schema.Parser().parse(
+                "{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
+        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(
+                restClient);
                 Deserializer<GenericData.Record> deserializer = new AvroKafkaDeserializer<>(restClient)) {
 
             Map<String, String> config = new HashMap<>();
@@ -248,7 +259,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
             config = new HashMap<>();
             config.put(AvroKafkaSerdeConfig.AVRO_ENCODING, AvroKafkaSerdeConfig.AVRO_ENCODING_JSON);
-            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER, ReflectAvroDatumProvider.class.getName());
+            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER,
+                    ReflectAvroDatumProvider.class.getName());
             deserializer.configure(config, false);
 
             AvroSchemaB avroSchemaB = new AvroSchemaB();
@@ -323,7 +335,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
             config = new HashMap<>();
             config.put(AvroKafkaSerdeConfig.AVRO_ENCODING, AvroKafkaSerdeConfig.AVRO_ENCODING_JSON);
-            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER, ReflectAvroDatumProvider.class.getName());
+            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER,
+                    ReflectAvroDatumProvider.class.getName());
             deserializer.configure(config, false);
 
             AvroSchemaB avroSchemaB = new AvroSchemaB();
@@ -398,7 +411,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
             config = new HashMap<>();
             config.put(AvroKafkaSerdeConfig.AVRO_ENCODING, AvroKafkaSerdeConfig.AVRO_ENCODING_JSON);
-            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER, ReflectAvroDatumProvider.class.getName());
+            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER,
+                    ReflectAvroDatumProvider.class.getName());
             config.putIfAbsent(SchemaResolverConfig.DESERIALIZER_DEREFERENCE_SCHEMA, "true");
             deserializer.configure(config, false);
 
@@ -457,7 +471,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
     @Test
     public void issue4463Test() throws Exception {
-        try (AvroKafkaSerializer<LeadFallErstellen> serializer = new AvroKafkaSerializer<LeadFallErstellen>(restClient);
+        try (AvroKafkaSerializer<LeadFallErstellen> serializer = new AvroKafkaSerializer<LeadFallErstellen>(
+                restClient);
                 Deserializer<LeadFallErstellen> deserializer = new AvroKafkaDeserializer<>(restClient)) {
 
             Map<String, String> config = new HashMap<>();
@@ -468,18 +483,15 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
             config = new HashMap<>();
             config.put(AvroKafkaSerdeConfig.AVRO_ENCODING, AvroKafkaSerdeConfig.AVRO_ENCODING_JSON);
-            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER, ReflectAvroDatumProvider.class.getName());
+            config.putIfAbsent(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER,
+                    ReflectAvroDatumProvider.class.getName());
             deserializer.configure(config, false);
 
             LeadFallErstellen leadFallErstellen = LeadFallErstellen.newBuilder()
-                    .setFall(Fall.newBuilder()
-                            .setVerantwortlichkeitForFall(Verantwortlichkeit.newBuilder()
-                                    .setBenoetigteStellen(List.of(FdtCodeArt.newBuilder()
-                                            .setArt(20)
-                                            .setCode(24)
-                                            .build()))
-                                    .build())
-                            .build())
+                    .setFall(Fall.newBuilder().setVerantwortlichkeitForFall(Verantwortlichkeit.newBuilder()
+                            .setBenoetigteStellen(
+                                    List.of(FdtCodeArt.newBuilder().setArt(20).setCode(24).build()))
+                            .build()).build())
                     .build();
 
             String artifactId = generateArtifactId();
@@ -502,8 +514,10 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
 
     @Test
     public void testAvroUsingHeaders() throws Exception {
-        Schema schema = new Schema.Parser().parse("{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
-        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(restClient);
+        Schema schema = new Schema.Parser().parse(
+                "{\"type\":\"record\",\"name\":\"myrecord3\",\"fields\":[{\"name\":\"bar\",\"type\":\"string\"}]}");
+        try (AvroKafkaSerializer<GenericData.Record> serializer = new AvroKafkaSerializer<GenericData.Record>(
+                restClient);
                 Deserializer<GenericData.Record> deserializer = new AvroKafkaDeserializer<>(restClient)) {
 
             Map<String, String> config = new HashMap<>();
@@ -535,14 +549,12 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
     @Test
     public void testReferenceRaw() throws Exception {
         Schema.Parser parser = new Schema.Parser();
-        Schema eventTypeSchema = parser.parse("{\n" +
-                "    \"type\": \"enum\",\n" +
-                "    \"namespace\": \"test\",\n" +
-                "    \"name\": \"EventType\",\n" +
-                "    \"symbols\": [\"CREATED\", \"DELETED\", \"UNDEFINED\", \"UPDATED\"]\n" +
-                "  }\n");
+        Schema eventTypeSchema = parser.parse("{\n" + "    \"type\": \"enum\",\n"
+                + "    \"namespace\": \"test\",\n" + "    \"name\": \"EventType\",\n"
+                + "    \"symbols\": [\"CREATED\", \"DELETED\", \"UNDEFINED\", \"UPDATED\"]\n" + "  }\n");
 
-        try (AvroKafkaSerializer<GenericData.EnumSymbol> serializer = new AvroKafkaSerializer<GenericData.EnumSymbol>(restClient);
+        try (AvroKafkaSerializer<GenericData.EnumSymbol> serializer = new AvroKafkaSerializer<GenericData.EnumSymbol>(
+                restClient);
                 Deserializer<GenericData.EnumSymbol> deserializer = new AvroKafkaDeserializer<>(restClient)) {
 
             Map<String, String> config = new HashMap<>();
@@ -568,8 +580,7 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
             waitForSchema(id -> {
                 try {
                     return restClient.ids().globalIds().byGlobalId(id).get().readAllBytes().length > 0;
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }, bytes, byteBuffer -> globalIdkey);
@@ -581,44 +592,27 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
     }
 
     @ParameterizedTest
-    @ValueSource(
-            classes = {
-                    io.apicurio.registry.serde.strategy.TopicIdStrategy.class,
-                    io.apicurio.registry.serde.avro.strategy.QualifiedRecordIdStrategy.class,
-                    io.apicurio.registry.serde.avro.strategy.RecordIdStrategy.class,
-                    io.apicurio.registry.serde.avro.strategy.TopicRecordIdStrategy.class
-            }
-    )
+    @ValueSource(classes = { io.apicurio.registry.serde.strategy.TopicIdStrategy.class,
+            io.apicurio.registry.serde.avro.strategy.QualifiedRecordIdStrategy.class,
+            io.apicurio.registry.serde.avro.strategy.RecordIdStrategy.class,
+            io.apicurio.registry.serde.avro.strategy.TopicRecordIdStrategy.class })
     public void testAvroReflect(Class<?> artifactResolverStrategyClass) throws Exception {
-        testAvroReflect(
-            artifactResolverStrategyClass,
-            ReflectAvroDatumProvider.class,
-            () -> new Tester("Apicurio", Tester.TesterState.ONLINE)
-        );
+        testAvroReflect(artifactResolverStrategyClass, ReflectAvroDatumProvider.class,
+                () -> new Tester("Apicurio", Tester.TesterState.ONLINE));
     }
 
     @ParameterizedTest
-    @ValueSource(
-        classes = {
-            io.apicurio.registry.serde.strategy.TopicIdStrategy.class,
+    @ValueSource(classes = { io.apicurio.registry.serde.strategy.TopicIdStrategy.class,
             io.apicurio.registry.serde.avro.strategy.QualifiedRecordIdStrategy.class,
             io.apicurio.registry.serde.avro.strategy.RecordIdStrategy.class,
-            io.apicurio.registry.serde.avro.strategy.TopicRecordIdStrategy.class
-        }
-    )
+            io.apicurio.registry.serde.avro.strategy.TopicRecordIdStrategy.class })
     public void testAvroReflectAllowNull(Class<?> artifactResolverStrategyClass) throws Exception {
-        testAvroReflect(
-            artifactResolverStrategyClass,
-            ReflectAllowNullAvroDatumProvider.class,
-            () -> new Tester("Apicurio", null)
-        );
+        testAvroReflect(artifactResolverStrategyClass, ReflectAllowNullAvroDatumProvider.class,
+                () -> new Tester("Apicurio", null));
     }
 
-    private void testAvroReflect(
-        Class<?> artifactResolverStrategyClass,
-        Class<?> datumProvider,
-        Supplier<Tester> testerFactory
-    ) throws Exception {
+    private void testAvroReflect(Class<?> artifactResolverStrategyClass, Class<?> datumProvider,
+            Supplier<Tester> testerFactory) throws Exception {
         try (AvroKafkaSerializer<Tester> serializer = new AvroKafkaSerializer<Tester>(restClient);
                 AvroKafkaDeserializer<Tester> deserializer = new AvroKafkaDeserializer<Tester>(restClient)) {
 
@@ -626,7 +620,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
             config.put(SerdeConfig.AUTO_REGISTER_ARTIFACT, "true");
             config.put(SerdeConfig.ENABLE_HEADERS, "false");
             config.put(AvroKafkaSerdeConfig.AVRO_DATUM_PROVIDER, datumProvider.getName());
-            config.put(SchemaResolverConfig.ARTIFACT_RESOLVER_STRATEGY, artifactResolverStrategyClass.getName());
+            config.put(SchemaResolverConfig.ARTIFACT_RESOLVER_STRATEGY,
+                    artifactResolverStrategyClass.getName());
             serializer.configure(config, false);
 
             config = new HashMap<>();
@@ -671,12 +666,14 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
         record.put("bar", "somebar");
 
         try (KafkaAvroSerializer serializer1 = new KafkaAvroSerializer(schemaClient);
-                AvroKafkaDeserializer<GenericData.Record> deserializer1 = new AvroKafkaDeserializer<GenericData.Record>(restClient)) {
+                AvroKafkaDeserializer<GenericData.Record> deserializer1 = new AvroKafkaDeserializer<GenericData.Record>(
+                        restClient)) {
             byte[] bytes = serializer1.serialize(subject, record);
 
             TestUtils.retry(() -> TestUtils.waitForSchema(contentId -> {
                 try {
-                    return restClient.ids().contentIds().byContentId(contentId).get().readAllBytes().length > 0;
+                    return restClient.ids().contentIds().byContentId(contentId).get()
+                            .readAllBytes().length > 0;
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -691,7 +688,8 @@ public class AvroSerdeTest extends AbstractResourceTestBase {
         }
 
         try (KafkaAvroDeserializer deserializer2 = new KafkaAvroDeserializer(schemaClient);
-                AvroKafkaSerializer<GenericData.Record> serializer2 = new AvroKafkaSerializer<GenericData.Record>(restClient)) {
+                AvroKafkaSerializer<GenericData.Record> serializer2 = new AvroKafkaSerializer<GenericData.Record>(
+                        restClient)) {
 
             Map<String, String> config = new HashMap<>();
             config.put(SerdeConfig.USE_ID, IdOption.contentId.name());

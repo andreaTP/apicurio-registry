@@ -1,7 +1,6 @@
 package io.apicurio.example.debezium.model;
 
 import example.inventory.customers.Value;
-import lombok.*;
 
 /**
  * @author Jakub Senko <em>m@jsenko.net</em>
@@ -25,11 +24,7 @@ public class Customer {
         if (value == null) {
             return null;
         }
-        return Customer.builder()
-                .id(value.getId())
-                .firstName(value.getFirstName())
-                .lastName(value.getLastName())
-                .email(value.getEmail())
-                .build();
+        return Customer.builder().id(value.getId()).firstName(value.getFirstName())
+                .lastName(value.getLastName()).email(value.getEmail()).build();
     }
 }

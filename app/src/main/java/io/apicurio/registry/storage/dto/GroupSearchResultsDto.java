@@ -1,10 +1,7 @@
 package io.apicurio.registry.storage.dto;
 
-import lombok.*;
-
 import java.util.ArrayList;
 import java.util.List;
-
 
 @NoArgsConstructor
 @AllArgsConstructor
