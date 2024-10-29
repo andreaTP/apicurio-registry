@@ -20,6 +20,7 @@ import static io.apicurio.registry.operator.resource.ResourceKey.*;
 
 // spotless:off
 @ControllerConfiguration(
+        name = "apicurio-registry-operator-controller",
         dependents = {
                 // App
                 @Dependent(
