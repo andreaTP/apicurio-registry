@@ -4,4 +4,3 @@ Warning: KiotaBuilder OpenAPI warning: #/components/schemas/VersionMetaData/exam
 Warning: KiotaBuilder OpenAPI warning: #/components/schemas/RoleMappingSearchResults/example - Data and type mismatch found.
 Warning: KiotaBuilder OpenAPI warning: #/components/responses/ArtifactContent/content/*~1*/examples/OpenAPI/value - Data and type mismatch found.
 Warning: KiotaBuilder No server url found in the OpenAPI document. The base url will need to be set when using the client.
-Warning: KiotaBuilder API client was generated with version 1.20.0 and the current version is 1.19.1, it will be upgraded and you should upgrade dependencies

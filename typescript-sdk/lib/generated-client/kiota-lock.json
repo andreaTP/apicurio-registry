@@ -2,7 +2,7 @@
   "descriptionHash": "5476D25C02276315E1450C45052D49C993E3A5A46E78D5733CC332080A2BE0A8B4A3BEB779AA94785E3EF0BC27E42DBCD8F48F45FD2DAFAE48C82F4134E5AAFA",
   "descriptionLocation": "../../../common/src/main/resources/META-INF/openapi.json",
   "lockFileVersion": "1.0.0",
-  "kiotaVersion": "1.19.1",
+  "kiotaVersion": "1.20.0",
   "clientClassName": "ApicurioRegistryClient",
   "typeAccessModifier": "Public",
   "clientNamespaceName": "ApiSdk",
